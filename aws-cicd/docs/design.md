@@ -180,7 +180,7 @@ CodeCommit版との差分のみ記載する。
 ```
 aws-cicd/                          ← 本ドキュメントが対象とするフォルダ
 ├── README.md
-├── buildspec.yml                  ← CodeBuildビルド定義サンプル（アプリリポジトリに配置して使用）
+├── buildspec.yml                  ← CodeBuildビルド定義（アプリリポジトリのルートに配置して使用）
 ├── docs/
 │   ├── design.md                  ← 本ファイル
 │   ├── setup_guide.md             ← CodeCommit版 接続セットアップ手順

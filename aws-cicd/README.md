@@ -90,7 +90,7 @@ cd cloudformation
 ```
 aws-cicd-ecs/
 ├── README.md
-├── buildspec.yml                  # CodeBuildビルド定義サンプル（アプリリポジトリに配置して使用）
+├── buildspec.yml                  # CodeBuildビルド定義（アプリリポジトリのルートに配置して使用）
 ├── docs/
 │   ├── design.md                  # 設計書（スコープ・インターフェース定義）
 │   ├── setup_guide.md             # CodeCommit版 接続セットアップ手順
