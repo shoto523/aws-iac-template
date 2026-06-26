@@ -172,7 +172,39 @@ aws-app/
 
 ---
 
-## 9. 設計上の決定事項
+## 9. 操作フロー
+
+すべての構築操作はローカルPCから実行する。TerraformはローカルのCLIからAWS APIを経由してリソースを作成する。AWSコンソールはリソース確認の用途でのみ使用する。
+
+| 操作の種類 | 操作場所 |
+|---|---|
+| terraform init / plan / apply | ローカルPC |
+| 認証情報設定（aws configure） | ローカルPC |
+| VPC / Subnet / Security Group の ID 確認 | AWSコンソール または ローカルPC（AWS CLI） |
+| 構築結果の確認（ECS / ALB ステータス） | AWSコンソール |
+
+### aws-app の構築フロー
+
+```
+[ローカルPC]                                         [AWS]
+    │
+    │ （事前に aws-cicd の terraform apply が完了していること）
+    │       ecr_repository_url を取得済み ←────────  ECR（aws-cicdが管理）
+    │
+    ├─① aws-app: terraform apply ───────────────→  ECS / ALB / CodeDeploy 作成
+    │                  ecs_cluster_name 等を取得 ←
+    │
+    ├─② aws-cicd: terraform apply（再実行）─────→  Deploy Stage 有効化
+    │             ※ ecs_cluster_name 等を aws-cicd の tfvars に設定して実行
+    │
+    └─③ 動作確認
+          curl http://<alb_dns_name>（ローカル操作）
+          ECS / ALB ステータス確認（AWSコンソール）
+```
+
+---
+
+## 10. 設計上の決定事項
 
 | 決定 | 理由 |
 |---|---|

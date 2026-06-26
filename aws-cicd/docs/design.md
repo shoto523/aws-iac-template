@@ -315,7 +315,52 @@ root main.tf（頂点）
 
 ---
 
-## 11. 設計上の決定事項
+## 11. 操作フロー
+
+すべての構築操作はローカルPCから実行する。TerraformはローカルのCLIからAWS APIを経由してリソースを作成する。AWSコンソールは確認・手動承認の用途でのみ使用する。
+
+| 操作の種類 | 操作場所 |
+|---|---|
+| terraform init / plan / apply | ローカルPC |
+| 認証情報設定（aws configure） | ローカルPC |
+| tfstateバケット作成（初回のみ） | ローカルPC（AWS CLI） |
+| CodeStar Connections 手動承認（GitHub版のみ） | AWSコンソール |
+| 構築結果の確認（任意） | AWSコンソール |
+
+### 新規ECS構築の場合
+
+```
+[ローカルPC]                                         [AWS]
+    │
+    ├─① aws-cicd: terraform apply ──────────────→  ECR / CodePipeline / CodeBuild / S3 / IAM 作成
+    │                  ecr_repository_url を取得 ←
+    │
+    ├─② aws-app:  terraform apply ──────────────→  ECS / ALB / CodeDeploy 作成
+    │                  ecs_cluster_name 等を取得 ←
+    │
+    ├─③ aws-cicd: terraform apply（再実行） ────→  Deploy Stage 有効化
+    │
+    └─④ ソースリポジトリ接続
+          CodeCommit版: git push（ローカル操作）→  CodeCommit
+          GitHub版: 手動承認（AWSコンソール）  →  CodeStar Connections
+```
+
+### 既存ECS連携の場合
+
+```
+[ローカルPC]                                         [AWS]
+    │
+    ├─① aws-cicd: terraform apply ──────────────→  ECR / CodePipeline / CodeBuild / S3 / IAM 作成
+    │             ※ ECS/CodeDeploy名を tfvars に設定済みのため Deploy Stage も有効
+    │
+    └─② ソースリポジトリ接続
+          CodeCommit版: git push（ローカル操作）→  CodeCommit
+          GitHub版: 手動承認（AWSコンソール）  →  CodeStar Connections
+```
+
+---
+
+## 12. 設計上の決定事項
 
 | 決定 | 理由 |
 |---|---|
