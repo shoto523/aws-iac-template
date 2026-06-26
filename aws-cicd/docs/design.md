@@ -34,7 +34,7 @@ CodePipelineのDeploy StageはCodeDeployを通じてECSにデプロイする。E
 | `aws-app` をデプロイ済み・パラメータ設定済み | ✅ | ✅ | ✅ |
 | 既存ECS連携・パラメータ設定済み | ✅ | ✅ | ✅ |
 
-**新規ECSの場合：** `aws-app` を先にデプロイし、出力されるリソース名を本リポジトリのパラメータとして渡す。  
+**新規ECSの場合：** 本リポジトリを先にデプロイして `ecr_repository_url` を取得し、次に `aws-app` をデプロイする（`ecr_repository_url` が必要なため）。`aws-app` の出力値を本リポジトリのパラメータにセットして再デプロイする。  
 **既存ECSの場合：** `aws-app` は不要。既存リソース名を本リポジトリのパラメータに直接渡す（[詳細 → docs/qa.md](qa.md)）。
 
 ---

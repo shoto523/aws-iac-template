@@ -18,7 +18,7 @@ Terraform版とCloudFormation版の両方を提供します。
 - ソースコードの変更を検知し、Dockerイメージをビルドして ECR に push するまでを自動化します
 - デプロイ先のアプリ基盤（ECS / ALB 等）は別リポジトリ（`aws-app`）で管理します
 - **既存のECS環境がある場合**は `aws-app` を使わず、既存リソース名を本リポジトリのパラメータとして渡すことでDeploy Stageを動作させられます（[連携手順 → docs/qa.md](docs/qa.md)）
-- **ECSを新規構築する場合**は `aws-app` を先にデプロイし、その出力値を本リポジトリのパラメータとして渡します
+- **ECSを新規構築する場合**は、まず本リポジトリをデプロイして `ecr_repository_url` を取得し、次に `aws-app` をデプロイする（`ecr_repository_url` が入力値として必要なため）。`aws-app` の出力値を本リポジトリのパラメータにセットして再デプロイします
 - `aws-app` も既存ECSも未接続の状態でパイプラインを実行すると、Deploy Stage で失敗します
 - ソースリポジトリは **CodeCommit版** と **GitHub版** の2択です
 - IaCツールは **Terraform版** と **CloudFormation版** の2択です
