@@ -87,7 +87,7 @@ Terraform版とCloudFormation版の両方を提供します。
 
 - AWS CLI v2 インストール済み・認証情報設定済み
 - Terraform >= 1.6（Terraform版を使う場合）
-- アプリインフラ（ECS / ALB 等）が別途構築済みであること
+- Deploy Stageを動作させる場合は `aws-app` のデプロイ済み、または既存ECS / CodeDeploy が設定済みであること
 
 ### Step 1: 設計書を読む
 
@@ -135,7 +135,8 @@ aws-cicd/
 ├── docs/
 │   ├── design.md                  # 設計書（スコープ・インターフェース定義）
 │   ├── setup_guide.md             # CodeCommit版 接続セットアップ手順
-│   └── setup_guide_github.md      # GitHub版 接続セットアップ手順
+│   ├── setup_guide_github.md      # GitHub版 接続セットアップ手順
+│   └── qa.md                      # よくある質問（既存ECS連携手順など）
 ├── terraform/                     # Terraform 版 IaC（作成中）
 │   └── modules/
 │       ├── ecr/                   # ECR リポジトリ（共通）
@@ -165,7 +166,7 @@ aws-cicd/
 | IAM | 03-iam | 各サービス用最小権限ロール・ポリシー |
 | CodePipeline | 04-pipeline | CI/CDパイプラインのオーケストレーション |
 | CodeBuild | 04-pipeline | Dockerビルド・テスト実行 |
-| CodeDeploy Application | 04-pipeline | デプロイアプリケーション定義（Deployment Groupはaws-app側） |
+| CodeDeploy Application + Deployment Group | aws-app | ECS・ALBへの参照が必要なためaws-app側で管理（[aws-app参照](../aws-app/README.md)） |
 | S3 | 04-pipeline | CodePipelineアーティファクトバケット |
 | CloudWatch Logs | 04-pipeline | CodeBuildビルドログ |
 
