@@ -152,7 +152,26 @@ CodePipeline は AWS 内のサービスであり、そのままでは GitHub の
 
 ---
 
-## Q6. appspec.yaml と taskdef.json が必要な理由は？
+## Q6. buildspec.yml で ECR ログインが必要な理由は？
+
+ECR はプライベートな Docker レジストリのため、`docker push` の前に認証が必要です。
+
+```bash
+aws ecr get-login-password --region ap-northeast-1 \
+  | docker login --username AWS --password-stdin <ECR_URI>
+```
+
+| ステップ | 処理 |
+|---|---|
+| `aws ecr get-login-password` | CodeBuild の IAM ロール権限で一時トークンを取得（有効期限12時間） |
+| `docker login` | そのトークンを使って Docker デーモンを ECR に認証 |
+| `docker push` | 認証済み状態で ECR にイメージを送信 |
+
+ログインを省くと `no basic auth credentials` エラーで `docker push` が失敗します。
+
+---
+
+## Q7. appspec.yaml と taskdef.json が必要な理由は？
 
 CodeDeploy の ECS Blue/Green デプロイに必要な3ファイルのうち、2つはアプリ側で用意する必要があります。
 
@@ -178,7 +197,7 @@ appspec.yaml に従って ECS サービスを Blue/Green で切り替え
 
 ---
 
-## Q7. buildspec.yml はアプリをコミットするたびに入れる必要があるか？
+## Q8. buildspec.yml はアプリをコミットするたびに入れる必要があるか？
 
 いいえ。最初に1回だけコミットしてリポジトリに置いておくものです。
 
