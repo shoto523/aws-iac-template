@@ -91,9 +91,9 @@ Terraform版とCloudFormation版の両方を提供します。
 | 順番 | ファイル | 内容 |
 |---|---|---|
 | 1 | [docs/design.md](docs/design.md) | 設計書。スコープ・アーキテクチャ・インターフェース定義を確認する |
-| 2 | [docs/terraform_guide.md](docs/terraform_guide.md) | Terraform 構築手順。init / plan / apply の詳細手順 |
-| 3 | [docs/setup_guide.md](docs/setup_guide.md) | CodeCommit版 接続手順。ローカルとAWSの接続設定を行う |
-| 3 | [docs/setup_guide_github.md](docs/setup_guide_github.md) | GitHub版 接続手順。CodeStar Connectionsの承認手順を行う |
+| 2 | [docs/setup_guide.md](docs/setup_guide.md) | CodeCommit版 接続手順。ローカルとAWSの接続設定を行う |
+| 2 | [docs/setup_guide_github.md](docs/setup_guide_github.md) | GitHub版 接続手順。CodeStar Connectionsの承認手順を行う |
+| - | [docs/buildspec_design.md](docs/buildspec_design.md) | buildspec.yml 設計書。アプリ側で用意するファイル（appspec.yaml・taskdef.json）の説明 |
 | - | [docs/qa.md](docs/qa.md) | よくある質問。既存ECS連携手順・Deploy Stageエラー対処・用語解説など |
 
 ---
