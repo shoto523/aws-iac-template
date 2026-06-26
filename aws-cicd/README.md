@@ -15,10 +15,10 @@ Terraform版とCloudFormation版の両方を提供します。
 
 このリポジトリは、**AWSのCI/CDパイプラインのみ**をIaCで即時構築するためのテンプレート集です。
 
-- ソースコードの変更を検知し、Dockerビルド・ECR push・ECS Blue/Greenデプロイまでを自動化します
-- このリポジトリ単体でCI/CD環境が完成します（VPC / Subnet / Security Group は別途用意が必要）
-- 既存のECSインフラがある場合はECS構築をスキップし、既存リソース名をパラメータで渡して接続できます
-- ECSを使用しない場合はECRをIaCから除外しても問題ありません
+- ソースコードの変更を検知し、Dockerイメージをビルドして ECR に push するまでを自動化します
+- デプロイ先のアプリ基盤（ECS / ALB 等）は別リポジトリ（`aws-app`）で管理します
+- 既存のECS環境にCI/CDを追加したい場合も、本リポジトリ単体でデプロイできます
+- **Deploy Stageを動作させるには `aws-app` のデプロイが必要です。** `aws-app` 未デプロイの状態でパイプラインを実行すると Deploy Stage で失敗します
 - ソースリポジトリは **CodeCommit版** と **GitHub版** の2択です
 - IaCツールは **Terraform版** と **CloudFormation版** の2択です
 
@@ -43,7 +43,7 @@ Terraform版とCloudFormation版の両方を提供します。
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  本リポジトリのスコープ                                           │
+│  本リポジトリのスコープ（aws-cicd）                               │
 │                                                                  │
 │  [CodeCommit / GitHub]                                           │
 │     │ push をトリガー                                             │
@@ -54,14 +54,17 @@ Terraform版とCloudFormation版の両方を提供します。
 │     │    ├─ テスト実行                                           │
 │     │    ├─ Docker ビルド                                        │
 │     │    └─ ECR へ push → imageDetail.json 生成                 │
-│     └─ Deploy Stage  : CodeDeploy → ECS Blue/Green デプロイ      │
+│     └─ Deploy Stage  : CodeDeploy（Deployment Groupはaws-app側） │
 │                                                                  │
 │  [ECR]  ← Dockerイメージリポジトリ                               │
 │  [S3]   ← アーティファクト保管                                   │
-│  [ECS Cluster / Service]  ← デプロイ先（新規作成 or 既存利用）   │
-│  [ALB / Target Group]     ← Blue/Greenトラフィック切替           │
 └──────────────────────────────────────────────────────────────────┘
-          ※ VPC / Subnet / Security Group は前提条件（対象外）
+          │ Deploy Stage
+          ▼
+┌──────────────────────────────────────────────────────────────────┐
+│  aws-app のスコープ                                               │
+│  ECS / ALB / CodeDeploy Deployment Group                         │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -137,16 +140,14 @@ aws-cicd/
 │       ├── source-codecommit/     # CodeCommit + EventBridge（CodeCommit版）
 │       ├── source-github/         # CodeStar Connections（GitHub版）
 │       ├── iam/                   # 各サービス用IAMロール・ポリシー（共通）
-│       ├── pipeline/              # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
-│       └── ecs/                   # ECS Cluster + Service + ALB + CodeDeploy設定（新規作成時のみ）
+│       └── pipeline/              # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
 └── cloudformation/                # CloudFormation 版 IaC（作成中）
     └── stacks/
         ├── 01-ecr.yaml                # ECR リポジトリ（共通）
         ├── 02-source-codecommit.yaml  # CodeCommit版 ← どちらか一方を選択
         ├── 02-source-github.yaml      # GitHub版    ←
         ├── 03-iam.yaml                # 各サービス用IAMロール・ポリシー（共通）
-        ├── 04-pipeline.yaml           # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
-        └── 05-ecs.yaml                # ECS Cluster + Service + ALB + CodeDeploy設定（新規作成時のみ）
+        └── 04-pipeline.yaml           # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
 ```
 
 ---
@@ -162,11 +163,9 @@ aws-cicd/
 | IAM | 03-iam | 各サービス用最小権限ロール・ポリシー |
 | CodePipeline | 04-pipeline | CI/CDパイプラインのオーケストレーション |
 | CodeBuild | 04-pipeline | Dockerビルド・テスト実行 |
-| CodeDeploy Application + Deployment Group | 04-pipeline | ECS Blue/Greenデプロイ設定 |
+| CodeDeploy Application | 04-pipeline | デプロイアプリケーション定義（Deployment Groupはaws-app側） |
 | S3 | 04-pipeline | CodePipelineアーティファクトバケット |
 | CloudWatch Logs | 04-pipeline | CodeBuildビルドログ |
-| ECS Cluster / Service | 05-ecs | デプロイ先コンテナ実行基盤（新規作成時のみ） |
-| ALB + Target Group（Blue/Green） | 05-ecs | Blue/Greenトラフィック切替（新規作成時のみ） |
 
 ---
 
