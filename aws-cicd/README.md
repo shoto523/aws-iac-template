@@ -17,6 +17,7 @@ Terraform版とCloudFormation版の両方を提供します。
 
 - ソースコードの変更を検知し、Dockerイメージをビルドして ECR に push するまでを自動化します
 - アプリケーションインフラ（ECS / ALB / VPC 等）は対象外です。別リポジトリで管理してください
+- ECR はアプリ側で ECS を使用することを想定して構築しています。ECS を使用しない場合は IaC から ECR を除外しても問題ありません
 - ソースリポジトリは **CodeCommit版** と **GitHub版** の2択です
 - IaCツールは **Terraform版** と **CloudFormation版** の2択です
 
