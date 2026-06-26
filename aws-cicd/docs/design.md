@@ -180,9 +180,11 @@ CodeCommit版との差分のみ記載する。
 ```
 aws-cicd/                          ← 本ドキュメントが対象とするフォルダ
 ├── README.md
+├── buildspec.yml                  ← CodeBuildビルド定義サンプル（アプリリポジトリに配置して使用）
 ├── docs/
 │   ├── design.md                  ← 本ファイル
-│   └── setup_guide.md             ← CodeCommit 接続セットアップ手順
+│   ├── setup_guide.md             ← CodeCommit版 接続セットアップ手順
+│   └── setup_guide_github.md      ← GitHub版 接続セットアップ手順
 ├── terraform/                     ← Terraform版
 │   ├── main.tf
 │   ├── variables.tf
