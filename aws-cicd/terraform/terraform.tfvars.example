@@ -1,0 +1,23 @@
+# コピーして terraform.tfvars にリネームして使用する
+# cp terraform.tfvars.example terraform.tfvars
+
+project_name = "my-app"
+aws_region   = "ap-northeast-1"
+
+# ソースリポジトリ種別: "codecommit" または "github" のどちらか一方を選択
+source_type = "codecommit"
+
+# ---- CodeCommit版のみ設定 ----
+codecommit_branch = "main"
+
+# ---- GitHub版のみ設定 ----
+# source_type = "github"
+# github_owner  = "your-github-username"
+# github_repo   = "your-repo-name"
+# github_branch = "main"
+
+# ---- aws-app デプロイ後に設定（新規ECS構築時は後から更新） ----
+ecs_cluster_name      = ""
+ecs_service_name      = ""
+codedeploy_app_name   = ""
+codedeploy_group_name = ""
