@@ -139,7 +139,8 @@ ECSがコンテナ起動時に使用するロール。
 aws-app/
 ├── README.md
 ├── docs/
-│   └── design.md                  ← 本ファイル
+│   ├── design.md                  ← 本ファイル
+│   └── terraform_guide.md         ← Terraform 構築手順（init / plan / apply）
 ├── terraform/                     ← Terraform版
 │   ├── main.tf
 │   ├── variables.tf
