@@ -27,6 +27,20 @@ Terraform版とCloudFormation版の両方を提供します。
 
 ---
 
+## ソースリポジトリの選択
+
+CodeCommit版・GitHub版のどちらか一方を選んでください。両方を同時にデプロイする必要はありません。
+
+| | CodeCommit版 | GitHub版 |
+|---|---|---|
+| **向いている人** | AWSのみで完結させたい | GitHubを既に使っている |
+| **使用するスタック** | `02-source-codecommit.yaml` | `02-source-github.yaml` |
+| **使用するモジュール（Terraform）** | `source-codecommit/` | `source-github/` |
+| **不要なファイル** | `02-source-github.yaml` / `source-github/` | `02-source-codecommit.yaml` / `source-codecommit/` |
+| **追加セットアップ** | [docs/setup_guide.md](docs/setup_guide.md) | [docs/setup_guide_github.md](docs/setup_guide_github.md)（手動承認が必要） |
+
+---
+
 ## Terraform vs CloudFormation
 
 どちらか一方を選んで使用してください。両方を同時にデプロイする必要はありません。
