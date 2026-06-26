@@ -15,9 +15,10 @@ Terraform版とCloudFormation版の両方を提供します。
 
 このリポジトリは、**AWSのCI/CDパイプラインのみ**をIaCで即時構築するためのテンプレート集です。
 
-- ソースコードの変更を検知し、Dockerイメージをビルドして ECR に push するまでを自動化します
-- アプリケーションインフラ（ECS / ALB / VPC 等）は対象外です。別リポジトリで管理してください
-- ECR はアプリ側で ECS を使用することを想定して構築しています。ECS を使用しない場合は IaC から ECR を除外しても問題ありません
+- ソースコードの変更を検知し、Dockerビルド・ECR push・ECS Blue/Greenデプロイまでを自動化します
+- このリポジトリ単体でCI/CD環境が完成します（VPC / Subnet / Security Group は別途用意が必要）
+- 既存のECSインフラがある場合はECS構築をスキップし、既存リソース名をパラメータで渡して接続できます
+- ECSを使用しない場合はECRをIaCから除外しても問題ありません
 - ソースリポジトリは **CodeCommit版** と **GitHub版** の2択です
 - IaCツールは **Terraform版** と **CloudFormation版** の2択です
 
@@ -42,22 +43,25 @@ Terraform版とCloudFormation版の両方を提供します。
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  CI/CD Pipeline（本リポジトリのスコープ）                        │
+│  本リポジトリのスコープ                                           │
 │                                                                  │
-│  [CodeCommit]                                                    │
-│     │ push をトリガー（EventBridge経由）                          │
+│  [CodeCommit / GitHub]                                           │
+│     │ push をトリガー                                             │
 │     ▼                                                            │
 │  [CodePipeline]                                                  │
-│     ├─ Source Stage  : CodeCommitからソース取得 → S3へ格納       │
+│     ├─ Source Stage  : ソース取得 → S3へ格納                     │
 │     ├─ Build Stage   : CodeBuild                                 │
 │     │    ├─ テスト実行                                           │
 │     │    ├─ Docker ビルド                                        │
-│     │    └─ ECR へ push                                          │
-│     └─ Deploy Stage  : CodeDeploy（ECSは別途アプリ側で管理）     │
+│     │    └─ ECR へ push → imageDetail.json 生成                 │
+│     └─ Deploy Stage  : CodeDeploy → ECS Blue/Green デプロイ      │
 │                                                                  │
-│  [ECR]  ← CodeBuild が push する                                 │
+│  [ECR]  ← Dockerイメージリポジトリ                               │
 │  [S3]   ← アーティファクト保管                                   │
+│  [ECS Cluster / Service]  ← デプロイ先（新規作成 or 既存利用）   │
+│  [ALB / Target Group]     ← Blue/Greenトラフィック切替           │
 └──────────────────────────────────────────────────────────────────┘
+          ※ VPC / Subnet / Security Group は前提条件（対象外）
 ```
 
 ---
@@ -133,14 +137,16 @@ aws-cicd/
 │       ├── source-codecommit/     # CodeCommit + EventBridge（CodeCommit版）
 │       ├── source-github/         # CodeStar Connections（GitHub版）
 │       ├── iam/                   # 各サービス用IAMロール・ポリシー（共通）
-│       └── pipeline/              # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
+│       ├── pipeline/              # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
+│       └── ecs/                   # ECS Cluster + Service + ALB + CodeDeploy設定（新規作成時のみ）
 └── cloudformation/                # CloudFormation 版 IaC（作成中）
     └── stacks/
         ├── 01-ecr.yaml                # ECR リポジトリ（共通）
         ├── 02-source-codecommit.yaml  # CodeCommit版 ← どちらか一方を選択
         ├── 02-source-github.yaml      # GitHub版    ←
         ├── 03-iam.yaml                # 各サービス用IAMロール・ポリシー（共通）
-        └── 04-pipeline.yaml           # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
+        ├── 04-pipeline.yaml           # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
+        └── 05-ecs.yaml                # ECS Cluster + Service + ALB + CodeDeploy設定（新規作成時のみ）
 ```
 
 ---
@@ -149,16 +155,18 @@ aws-cicd/
 
 | リソース | スタック | 説明 |
 |---|---|---|
-| ECR | 01-ecr | Dockerイメージリポジトリ。ECSが未構築でも先行デプロイ可能 |
+| ECR | 01-ecr | Dockerイメージリポジトリ |
 | CodeCommit | 02-source-codecommit | ソースコードリポジトリ（CodeCommit版） |
 | EventBridge | 02-source-codecommit | CodeCommitのpushイベントを検知してCodePipelineを起動 |
 | CodeStar Connections | 02-source-github | GitHubとCodePipelineを接続する認証機構（GitHub版） |
 | IAM | 03-iam | 各サービス用最小権限ロール・ポリシー |
 | CodePipeline | 04-pipeline | CI/CDパイプラインのオーケストレーション |
 | CodeBuild | 04-pipeline | Dockerビルド・テスト実行 |
-| CodeDeploy | 04-pipeline | デプロイ設定（ECSはアプリ側で管理） |
+| CodeDeploy Application + Deployment Group | 04-pipeline | ECS Blue/Greenデプロイ設定 |
 | S3 | 04-pipeline | CodePipelineアーティファクトバケット |
 | CloudWatch Logs | 04-pipeline | CodeBuildビルドログ |
+| ECS Cluster / Service | 05-ecs | デプロイ先コンテナ実行基盤（新規作成時のみ） |
+| ALB + Target Group（Blue/Green） | 05-ecs | Blue/Greenトラフィック切替（新規作成時のみ） |
 
 ---
 
