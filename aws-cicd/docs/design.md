@@ -169,6 +169,23 @@ CodeCommit版との差分のみ記載する。
 
 ## 7. IAM設計
 
+### source_type による条件分岐
+
+IAM リソースは `source_type` 変数（`"codecommit"` または `"github"`）によって作成内容が変わる。
+
+| リソース | codecommit | github |
+|---|---|---|
+| CodePipeline ロール（共通部分） | ✅ | ✅ |
+| CodeCommit アクセスポリシー | ✅ | ❌ |
+| CodeStar Connections ポリシー | ❌ | ✅ |
+| EventBridge ロール | ✅ | ❌ |
+
+**実装方法（Terraform）**: `count = var.source_type == "codecommit" ? 1 : 0` で条件付きリソース作成。
+
+**実装方法（CloudFormation）**: `Conditions` セクションで `IsCodeCommit: !Equals [!Ref SourceType, "codecommit"]` を定義し、各リソースに `Condition:` を付与。
+
+---
+
 ### CodePipeline実行ロール
 
 ソース種別によって権限が異なる。
@@ -200,6 +217,12 @@ CodeCommit版との差分のみ記載する。
 | ECR | GetAuthorizationToken, PutImage, BatchCheckLayerAvailability ほか |
 | S3（アーティファクトバケット） | GetObject, PutObject |
 | CloudWatch Logs | CreateLogGroup, CreateLogStream, PutLogEvents |
+
+### EventBridge実行ロール（CodeCommit版のみ）
+
+| 操作対象 | 必要な権限 |
+|---|---|
+| CodePipeline | StartPipelineExecution |
 
 ---
 
