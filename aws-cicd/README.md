@@ -11,6 +11,32 @@ Terraform版とCloudFormation版の両方を提供します。
 
 ---
 
+## Overview
+
+このリポジトリは、**AWSのCI/CDパイプラインのみ**をIaCで即時構築するためのテンプレート集です。
+
+- ソースコードの変更を検知し、Dockerイメージをビルドして ECR に push するまでを自動化します
+- アプリケーションインフラ（ECS / ALB / VPC 等）は対象外です。別リポジトリで管理してください
+- ソースリポジトリは **CodeCommit版** と **GitHub版** の2択です
+- IaCツールは **Terraform版** と **CloudFormation版** の2択です
+
+> 詳細なスコープ・アーキテクチャは [docs/design.md](docs/design.md) を参照してください。
+
+---
+
+## Terraform vs CloudFormation
+
+どちらか一方を選んで使用してください。両方を同時にデプロイする必要はありません。
+
+| | Terraform | CloudFormation |
+|---|---|---|
+| **向いている人** | Terraformを既に使っている・マルチクラウド対応を見越している | AWSのみ・AWS管理コンソールで完結させたい |
+| **状態管理** | tfstate ファイル（S3バックエンド推奨） | AWS が自動管理 |
+| **デプロイ方法** | `terraform apply` | `deploy.sh` スクリプト |
+| **必要ツール** | Terraform >= 1.6、AWS CLI v2 | AWS CLI v2 のみ |
+
+---
+
 ## Architecture
 
 ```
@@ -78,9 +104,14 @@ cd cloudformation
 ./deploy.sh --project-name <project_name> --region ap-northeast-1
 ```
 
-### Step 3: CodeCommit に接続してコードを push する
+### Step 3: ソースリポジトリと接続してコードを push する
 
-[docs/setup_guide.md](docs/setup_guide.md) の手順に従い、ローカルと CodeCommit を接続します。  
+**CodeCommit版の場合**  
+[docs/setup_guide.md](docs/setup_guide.md) の手順に従い、ローカルと CodeCommit を接続します。
+
+**GitHub版の場合**  
+[docs/setup_guide_github.md](docs/setup_guide_github.md) の手順に従い、CodeStar Connections の承認を行います。
+
 接続後、アプリケーションのコードを push すると CodePipeline が自動起動します。
 
 ---
@@ -115,8 +146,6 @@ aws-cicd/
 
 ## AWS Resources
 
-| リソース | 説明 |
-|---|---|
 | リソース | スタック | 説明 |
 |---|---|---|
 | ECR | 01-ecr | Dockerイメージリポジトリ。ECSが未構築でも先行デプロイ可能 |
