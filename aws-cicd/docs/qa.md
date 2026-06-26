@@ -152,6 +152,49 @@ CodePipeline は AWS 内のサービスであり、そのままでは GitHub の
 
 ---
 
+## Q6. appspec.yaml と taskdef.json が必要な理由は？
+
+CodeDeploy の ECS Blue/Green デプロイに必要な3ファイルのうち、2つはアプリ側で用意する必要があります。
+
+| ファイル | 作成者 | 役割 |
+|---|---|---|
+| `imageDetail.json` | buildspec.yml が自動生成 | ECR にプッシュしたイメージの URI を記録 |
+| `taskdef.json` | アプリ開発者が用意 | ECS タスク定義のテンプレート（CPU・メモリ・ポート等） |
+| `appspec.yaml` | アプリ開発者が用意 | どの ECS サービスにデプロイするかを CodeDeploy に伝える |
+
+**動作の流れ:**
+
+```
+imageDetail.json の ImageURI
+        ↓
+taskdef.json の <IMAGE1_NAME> を実際の URI に置換
+        ↓
+新しい ECS タスク定義を登録
+        ↓
+appspec.yaml に従って ECS サービスを Blue/Green で切り替え
+```
+
+どれか1つ欠けても Deploy Stage が失敗します。各ファイルのテンプレートは [docs/buildspec_design.md](buildspec_design.md) を参照してください。
+
+---
+
+## Q7. buildspec.yml はアプリをコミットするたびに入れる必要があるか？
+
+いいえ。最初に1回だけコミットしてリポジトリに置いておくものです。
+
+```
+your-app-repo/
+├── buildspec.yml   ← 最初に1回置く。以後ほぼ変更なし
+├── appspec.yaml    ← 同上
+├── taskdef.json    ← 同上
+├── Dockerfile      ← 同上
+└── src/            ← ここを毎回コミット・push する
+```
+
+`aws-cicd/buildspec.yml` にサンプルを用意しています。アプリリポジトリ作成時にコピーして使用してください。
+
+---
+
 ## Q3. Deploy Stageだけ失敗する場合の確認ポイント
 
 | 確認項目 | 確認方法 |
