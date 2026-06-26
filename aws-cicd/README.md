@@ -29,7 +29,7 @@ Terraform版とCloudFormation版の両方を提供します。
 
 ## ソースリポジトリの選択
 
-アプリケーションのソースコードをどこで管理するかによって、**CodeCommit版** または **GitHub版** の2択から選んでください。両方を同時にデプロイする必要はありません。
+使用するスタック（`02-source-codecommit.yaml` または `02-source-github.yaml`）をどちらか一方選んでください。Terraform版も同様に、使用するモジュールをどちらか一方選びます。両方を同時にデプロイする必要はありません。
 
 | | CodeCommit版 | GitHub版 |
 |---|---|---|
