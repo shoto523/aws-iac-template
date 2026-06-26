@@ -39,6 +39,8 @@ Terraform版とCloudFormation版の両方を提供します。
 | **不要なファイル** | `02-source-github.yaml` / `source-github/` | `02-source-codecommit.yaml` / `source-codecommit/` |
 | **追加セットアップ** | [docs/setup_guide.md](docs/setup_guide.md) | [docs/setup_guide_github.md](docs/setup_guide_github.md#step-2-github-との接続を手動承認する)（手動承認が必要） |
 
+> **追加セットアップが必要な理由：** IaC のデプロイだけではソースリポジトリと CodePipeline の接続が完了しません。CodeCommit 版は git の認証設定、GitHub 版は CodeStar Connections の手動承認が必要です。これらを完了して初めて push 時に CodePipeline が起動します。
+
 ---
 
 ## Terraform vs CloudFormation
