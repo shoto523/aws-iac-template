@@ -135,6 +135,13 @@ CodeCommit版との差分のみ記載する。
 
 ## 6. インターフェース定義
 
+本セクションのパラメータはTerraform版・CloudFormation版で共通。渡し方のみ異なる。
+
+| IaCツール | パラメータの渡し方 |
+|---|---|
+| Terraform | `terraform.tfvars` に記載 |
+| CloudFormation | `deploy.sh` の `--parameter-overrides` で渡す |
+
 ### 入力パラメータ（ユーザー設定値）
 
 | 分類 | パラメータ名 | 説明 | 例 |
