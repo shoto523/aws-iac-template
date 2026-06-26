@@ -100,13 +100,15 @@ aws-cicd-ecs/
 │       ├── ecr/                   # ECR リポジトリ（共通）
 │       ├── source-codecommit/     # CodeCommit + EventBridge（CodeCommit版）
 │       ├── source-github/         # CodeStar Connections（GitHub版）
-│       └── pipeline/              # CodePipeline + CodeBuild + S3 + IAM（共通）
+│       ├── iam/                   # 各サービス用IAMロール・ポリシー（共通）
+│       └── pipeline/              # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
 └── cloudformation/                # CloudFormation 版 IaC（作成中）
     └── stacks/
         ├── 01-ecr.yaml                # ECR リポジトリ（共通）
         ├── 02-source-codecommit.yaml  # CodeCommit版 ← どちらか一方を選択
         ├── 02-source-github.yaml      # GitHub版    ←
-        └── 03-pipeline.yaml           # CodePipeline + CodeBuild + S3 + IAM（共通）
+        ├── 03-iam.yaml                # 各サービス用IAMロール・ポリシー（共通）
+        └── 04-pipeline.yaml           # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
 ```
 
 ---
@@ -115,15 +117,18 @@ aws-cicd-ecs/
 
 | リソース | 説明 |
 |---|---|
-| CodeCommit | ソースコードリポジトリ |
-| EventBridge | CodeCommitのpushイベントを検知してCodePipelineを起動 |
-| CodePipeline | CI/CDパイプラインのオーケストレーション |
-| CodeBuild | Dockerビルド・テスト実行 |
-| CodeDeploy | デプロイ設定（ECSはアプリ側で管理） |
-| ECR | Dockerイメージリポジトリ。将来のECS構築を見越して構築している。ECSを構築しない場合でも、ECRのみ存在する状態で問題ない |
-| S3 | CodePipelineアーティファクトバケット |
-| CloudWatch Logs | ビルドログ |
-| IAM | 各サービス用最小権限ロール |
+| リソース | スタック | 説明 |
+|---|---|---|
+| ECR | 01-ecr | Dockerイメージリポジトリ。ECSが未構築でも先行デプロイ可能 |
+| CodeCommit | 02-source-codecommit | ソースコードリポジトリ（CodeCommit版） |
+| EventBridge | 02-source-codecommit | CodeCommitのpushイベントを検知してCodePipelineを起動 |
+| CodeStar Connections | 02-source-github | GitHubとCodePipelineを接続する認証機構（GitHub版） |
+| IAM | 03-iam | 各サービス用最小権限ロール・ポリシー |
+| CodePipeline | 04-pipeline | CI/CDパイプラインのオーケストレーション |
+| CodeBuild | 04-pipeline | Dockerビルド・テスト実行 |
+| CodeDeploy | 04-pipeline | デプロイ設定（ECSはアプリ側で管理） |
+| S3 | 04-pipeline | CodePipelineアーティファクトバケット |
+| CloudWatch Logs | 04-pipeline | CodeBuildビルドログ |
 
 ---
 
