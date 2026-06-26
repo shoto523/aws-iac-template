@@ -91,7 +91,7 @@ Terraform版とCloudFormation版の両方を提供します。
 | 1 | [docs/design.md](docs/design.md) | 設計書。スコープ・アーキテクチャ・インターフェース定義を確認する |
 | 2 | [docs/setup_guide.md](docs/setup_guide.md) | CodeCommit版 接続手順。ローカルとAWSの接続設定を行う |
 | 2 | [docs/setup_guide_github.md](docs/setup_guide_github.md) | GitHub版 接続手順。CodeStar Connectionsの承認手順を行う |
-| - | [docs/qa.md](docs/qa.md) | よくある質問。既存ECS連携手順・Deploy Stageエラー対処など |
+| - | [docs/qa.md](docs/qa.md) | よくある質問。既存ECS連携手順・Deploy Stageエラー対処・用語解説など |
 
 ---
 
@@ -150,7 +150,7 @@ aws-cicd/
 │   ├── design.md                  # 設計書（スコープ・インターフェース定義）
 │   ├── setup_guide.md             # CodeCommit版 接続セットアップ手順
 │   ├── setup_guide_github.md      # GitHub版 接続セットアップ手順
-│   └── qa.md                      # よくある質問（既存ECS連携手順など）
+│   └── qa.md                      # よくある質問（既存ECS連携手順・用語解説など）
 ├── terraform/                     # Terraform 版 IaC（作成中）
 │   └── modules/
 │       ├── ecr/                   # ECR リポジトリ（共通）

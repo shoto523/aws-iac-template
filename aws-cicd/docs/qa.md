@@ -120,6 +120,38 @@ aws cloudformation describe-stacks `
 
 ---
 
+## Q4. CodeStar Connections とは何か？
+
+AWS CodePipeline と GitHub（または Bitbucket / GitLab）を接続するための **認証機構サービス**です。
+
+CodePipeline は AWS 内のサービスであり、そのままでは GitHub のプライベートリポジトリにアクセスできません。CodeStar Connections を使うことで、AWS と GitHub の間に安全な接続を確立し、push イベントの検知やソースコードの取得が可能になります。
+
+| 項目 | 内容 |
+|---|---|
+| 役割 | AWS サービス（CodePipeline）と外部 Git リポジトリ（GitHub 等）を繋ぐ認証ブリッジ |
+| 接続ステータス | 作成直後は `PENDING`。手動承認後に `AVAILABLE` になる |
+| 手動承認が必要な理由 | GitHub 側でAWSからのアクセスを許可する操作が必要なため、IaC だけでは完結しない |
+| 承認手順 | [docs/setup_guide_github.md](setup_guide_github.md#step-2-github-との接続を手動承認する) |
+
+> `AVAILABLE` にならないと CodePipeline は起動しません。デプロイ後は必ずステータスを確認してください。
+
+---
+
+## Q5. 設計書に記載の `>=`（バージョン要件表記）とはどういう意味か？
+
+`>=` は「**以上**」を意味する比較演算子です。ソフトウェアの依存関係を表記する際に広く使われます。
+
+| 表記 | 意味 |
+|---|---|
+| `Terraform >= 1.6` | Terraform のバージョン 1.6 以上が必要 |
+| `>=` | greater than or equal to（以上） |
+| `>` | greater than（より大きい） |
+| `<=` | less than or equal to（以下） |
+
+インストール済みのバージョンは `terraform version` コマンドで確認できます。
+
+---
+
 ## Q3. Deploy Stageだけ失敗する場合の確認ポイント
 
 | 確認項目 | 確認方法 |
