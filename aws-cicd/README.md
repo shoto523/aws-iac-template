@@ -88,7 +88,7 @@ cd cloudformation
 ## Directory Structure
 
 ```
-aws-cicd-ecs/
+aws-cicd/
 ├── README.md
 ├── buildspec.yml                  # CodeBuildビルド定義（アプリリポジトリのルートに配置して使用）
 ├── docs/
