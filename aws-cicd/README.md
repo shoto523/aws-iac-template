@@ -17,7 +17,7 @@ Terraform版とCloudFormation版の両方を提供します。
 
 - ソースコードの変更を検知し、Dockerイメージをビルドして ECR に push するまでを自動化します
 - デプロイ先のアプリ基盤（ECS / ALB 等）は別リポジトリ（`aws-app`）で管理します
-- **既存のECS環境がある場合**は `aws-app` を使わず、既存リソース名を本リポジトリのパラメータとして渡すことでDeploy Stageを動作させられます
+- **既存のECS環境がある場合**は `aws-app` を使わず、既存リソース名を本リポジトリのパラメータとして渡すことでDeploy Stageを動作させられます（[連携手順 → docs/qa.md](docs/qa.md)）
 - **ECSを新規構築する場合**は `aws-app` を先にデプロイし、その出力値を本リポジトリのパラメータとして渡します
 - `aws-app` も既存ECSも未接続の状態でパイプラインを実行すると、Deploy Stage で失敗します
 - ソースリポジトリは **CodeCommit版** と **GitHub版** の2択です
@@ -77,6 +77,7 @@ Terraform版とCloudFormation版の両方を提供します。
 | 1 | [docs/design.md](docs/design.md) | 設計書。スコープ・アーキテクチャ・インターフェース定義を確認する |
 | 2 | [docs/setup_guide.md](docs/setup_guide.md) | CodeCommit版 接続手順。ローカルとAWSの接続設定を行う |
 | 2 | [docs/setup_guide_github.md](docs/setup_guide_github.md) | GitHub版 接続手順。CodeStar Connectionsの承認手順を行う |
+| - | [docs/qa.md](docs/qa.md) | よくある質問。既存ECS連携手順・Deploy Stageエラー対処など |
 
 ---
 
