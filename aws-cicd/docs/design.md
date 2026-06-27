@@ -148,14 +148,15 @@ CodeCommit版との差分のみ記載する。
 |---|---|---|---|
 | 共通 | `project_name` | リソース名プレフィックス | `my-app` |
 | 共通 | `aws_region` | デプロイ先リージョン | `ap-northeast-1` |
-| ソース情報（CodeCommit版） | `codecommit_repo_name` | ソースコードを格納するCodeCommitリポジトリ名 | `my-app-repo` |
+| 共通 | `source_type` | ソース種別（`codecommit` または `github`） | `codecommit` |
 | ソース情報（CodeCommit版） | `codecommit_branch` | トリガー対象ブランチ | `main` |
+| ソース情報（GitHub版） | `github_owner` | GitHubオーナー名（ユーザー名 または 組織名） | `my-org` |
+| ソース情報（GitHub版） | `github_repo` | GitHubリポジトリ名 | `my-app-repo` |
+| ソース情報（GitHub版） | `github_branch` | トリガー対象ブランチ | `main` |
 | アプリ参照値 | `ecs_cluster_name` | デプロイ先ECSクラスター名（`aws-app`の出力値） | `my-app-cluster` |
 | アプリ参照値 | `ecs_service_name` | デプロイ先ECSサービス名（`aws-app`の出力値） | `my-app-service` |
 | アプリ参照値 | `codedeploy_app_name` | CodeDeployアプリ名（`aws-app`の出力値） | `my-app-deploy` |
 | アプリ参照値 | `codedeploy_group_name` | CodeDeployデプロイグループ名（`aws-app`の出力値） | `my-app-deploy-group` |
-
-> GitHub版を使用する場合はソース情報のパラメータが異なる（`02-source-github.yaml` / `source-github` モジュールを参照）。
 
 ### 出力
 

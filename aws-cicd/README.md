@@ -128,7 +128,12 @@ terraform apply
 
 ```powershell
 cd cloudformation
-./deploy.sh --project-name <project_name> --region ap-northeast-1
+aws cloudformation deploy `
+  --template-file root.yml `
+  --stack-name <project_name>-cicd `
+  --parameter-overrides ProjectName=<project_name> SourceType=codecommit `
+  --capabilities CAPABILITY_NAMED_IAM `
+  --region ap-northeast-1
 ```
 
 ### Step 3: ソースリポジトリと接続してコードを push する
@@ -151,24 +156,25 @@ aws-cicd/
 ├── buildspec.yml                  # CodeBuildビルド定義（アプリリポジトリのルートに配置して使用）
 ├── docs/
 │   ├── design.md                  # 設計書（スコープ・インターフェース定義）
-│   ├── terraform_guide.md         # Terraform 構築手順（init / plan / apply）
+│   ├── buildspec_design.md        # buildspec.yml 設計書
 │   ├── setup_guide.md             # CodeCommit版 接続セットアップ手順
 │   ├── setup_guide_github.md      # GitHub版 接続セットアップ手順
 │   └── qa.md                      # よくある質問（既存ECS連携手順・用語解説など）
 ├── terraform/                     # Terraform 版 IaC（作成中）
 │   └── modules/
 │       ├── ecr/                   # ECR リポジトリ（共通）
-│       ├── source-codecommit/     # CodeCommit + EventBridge（CodeCommit版）
+│       ├── source-codecommit/     # CodeCommit（CodeCommit版）
 │       ├── source-github/         # CodeStar Connections（GitHub版）
 │       ├── iam/                   # 各サービス用IAMロール・ポリシー（共通）
-│       └── pipeline/              # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
+│       └── pipeline/              # CodePipeline + CodeBuild + S3 + CloudWatch Logs + EventBridge（共通）
 └── cloudformation/                # CloudFormation 版 IaC（作成中）
+    ├── root.yml                   # ネストスタック頂点（全スタックを1コマンドでデプロイ）
     └── stacks/
         ├── 01-ecr.yaml                # ECR リポジトリ（共通）
         ├── 02-source-codecommit.yaml  # CodeCommit版 ← どちらか一方を選択
         ├── 02-source-github.yaml      # GitHub版    ←
         ├── 03-iam.yaml                # 各サービス用IAMロール・ポリシー（共通）
-        └── 04-pipeline.yaml           # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
+        └── 04-pipeline.yaml           # CodePipeline + CodeBuild + S3 + CloudWatch Logs（共通）+ EventBridge（CodeCommit版のみ）
 ```
 
 ---
