@@ -227,3 +227,19 @@ your-app-repo/
 ```
 
 `aws-cicd/buildspec.yml` にサンプルを用意しています。アプリリポジトリ作成時にコピーして使用してください。
+
+---
+
+## Q9. terraform apply で「Map value must satisfy constraint: length >= 1」エラーが出る
+
+Deploy Stage の設定値（`codedeploy_app_name` / `codedeploy_group_name`）が空文字のまま apply したときに発生する。AWS CodePipeline は設定値に空文字を許可しない。
+
+**原因**: aws-app をデプロイする前に aws-cicd を apply した。
+
+**解決策**: `terraform.tfvars` の `codedeploy_app_name` と `codedeploy_group_name` が空文字のままでも apply できるよう、Deploy Stage は条件付きになっている（値が設定されていないときは Source + Build の2ステージで動作する）。
+
+つまり:
+- **初回 apply（aws-app デプロイ前）**: Source + Build の2ステージで作成される → エラーは出ない
+- **aws-app デプロイ後に再 apply**: Deploy Stage が追加される → 3ステージになり完成
+
+このエラーが出た場合は `terraform.tfvars` を確認し、値が正しく設定されているかを確認する。

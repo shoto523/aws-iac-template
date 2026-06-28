@@ -126,25 +126,29 @@ resource "aws_codepipeline" "main" {
     }
   }
 
-  stage {
-    name = "Deploy"
+  # aws-appデプロイ後にcodedeploy_app_nameを設定するとDeployステージが追加される
+  dynamic "stage" {
+    for_each = (var.codedeploy_app_name != "" && var.codedeploy_group_name != "") ? [1] : []
+    content {
+      name = "Deploy"
 
-    action {
-      name            = "Deploy"
-      category        = "Deploy"
-      owner           = "AWS"
-      provider        = "CodeDeployToECS"
-      version         = "1"
-      input_artifacts = ["build_output"]
-      configuration = {
-        ApplicationName                = var.codedeploy_app_name
-        DeploymentGroupName            = var.codedeploy_group_name
-        TaskDefinitionTemplateArtifact = "build_output"
-        TaskDefinitionTemplatePath     = "taskdef.json"
-        AppSpecTemplateArtifact        = "build_output"
-        AppSpecTemplatePath            = "appspec.yaml"
-        Image1ArtifactName             = "build_output"
-        Image1ContainerName            = "IMAGE1_NAME"
+      action {
+        name            = "Deploy"
+        category        = "Deploy"
+        owner           = "AWS"
+        provider        = "CodeDeployToECS"
+        version         = "1"
+        input_artifacts = ["build_output"]
+        configuration = {
+          ApplicationName                = var.codedeploy_app_name
+          DeploymentGroupName            = var.codedeploy_group_name
+          TaskDefinitionTemplateArtifact = "build_output"
+          TaskDefinitionTemplatePath     = "taskdef.json"
+          AppSpecTemplateArtifact        = "build_output"
+          AppSpecTemplatePath            = "appspec.yaml"
+          Image1ArtifactName             = "build_output"
+          Image1ContainerName            = "IMAGE1_NAME"
+        }
       }
     }
   }
