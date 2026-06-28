@@ -171,16 +171,33 @@ aws-app/
 
 ## AWS Resources
 
-| リソース | スタック | 説明 |
+### 事前に必要なリソース（スコープ外・別途構築）
+
+本テンプレートをデプロイする前に、以下のリソースが揃っている必要があります。
+
+| リソース | 用途 | 備考 |
+|---|---|---|
+| VPC | ECS・ALB を配置するネットワーク | |
+| パブリックサブネット（複数AZ推奨） | ALB・NAT Gateway の配置先 | インターネットゲートウェイへのルートが必要 |
+| プライベートサブネット（複数AZ推奨） | ECS タスクの配置先 | NAT Gateway へのルートが必要 |
+| Internet Gateway | VPC からインターネットへの出入口 | パブリックサブネットのルートテーブルにアタッチ |
+| NAT Gateway | プライベートサブネットからのアウトバウンド通信 | ECR イメージ pull・CloudWatch Logs 送信に必要 |
+| ALB 用セキュリティグループ | ALB へのアクセス制御 | インバウンド: 0.0.0.0/0 → :80, :8080 |
+| ECS タスク用セキュリティグループ | ECS タスクへのアクセス制御 | インバウンド: ALB 用 SG → `container_port` |
+| ECR リポジトリ | Docker イメージの保管 | **`aws-cicd` が管理**（先にデプロイが必要） |
+
+### このテンプレートが管理するリソース（aws-app）
+
+| リソース | スタック / モジュール | 説明 |
 |---|---|---|
 | IAM（Task Execution / Task / CodeDeploy） | 01-iam | 各サービス用最小権限ロール |
-| ALB | 02-alb | Blue/Greenトラフィック切替のロードバランサー |
-| Target Group（Blue/Green） | 02-alb | Blue/Greenデプロイ用ターゲットグループ（2つ） |
+| ALB | 02-alb | Blue/Green トラフィック切替のロードバランサー（パブリックサブネット配置） |
+| Target Group（Blue/Green） | 02-alb | Blue/Green デプロイ用ターゲットグループ（2つ） |
 | ALB Listener（:80 / :8080） | 02-alb | 本番・テストリスナー |
 | ECS Cluster | 03-ecs | コンテナの実行基盤 |
-| ECS Service | 03-ecs | アプリコンテナを常時稼働させるサービス |
-| ECS Task Definition | 03-ecs | コンテナの定義 |
-| CodeDeploy Deployment Group | 04-codedeploy | ECS Blue/Greenデプロイグループ |
+| ECS Service | 03-ecs | アプリコンテナを常時稼働させるサービス（プライベートサブネット配置） |
+| ECS Task Definition | 03-ecs | コンテナの定義（イメージ URI・CPU・メモリ） |
+| CodeDeploy Deployment Group | 04-codedeploy | ECS Blue/Green デプロイグループ |
 
 ---
 
