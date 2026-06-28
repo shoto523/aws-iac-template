@@ -74,10 +74,10 @@ aws_region   = "ap-northeast-1"
 # ソース種別: "codecommit" または "github" のどちらか一方を選択
 source_type = "codecommit"
 
-# ---- CodeCommit版のみ設定 ----
+# ---- CodeCommit版のみ設定（GitHub版を使う場合はこのブロックを削除してよい） ----
 codecommit_branch = "main"
 
-# ---- GitHub版のみ設定 ----
+# ---- GitHub版のみ設定（CodeCommit版を使う場合はこのブロックを削除してよい） ----
 # source_type    = "github"
 # github_owner   = "your-github-username"
 # github_repo    = "your-repo-name"
@@ -89,6 +89,8 @@ ecs_service_name      = ""
 codedeploy_app_name   = ""
 codedeploy_group_name = ""
 ```
+
+使用しない方のソースブロックは **削除して構わない**。`variables.tf` で各変数に `default = ""` が設定されているため、記載がなくてもエラーにならない。
 
 > **注意**: `terraform.tfvars` は認証情報やシークレットを含む場合があるため `.gitignore` に追加すること。
 

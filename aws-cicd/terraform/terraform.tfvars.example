@@ -7,11 +7,11 @@ aws_region   = "ap-northeast-1"
 # ソースリポジトリ種別: "codecommit" または "github" のどちらか一方を選択
 source_type = "codecommit"
 
-# ---- CodeCommit版のみ設定 ----
+# ---- CodeCommit版のみ設定（GitHub版を使う場合はこのブロックを削除してよい） ----
 codecommit_branch = "main"
 
-# ---- GitHub版のみ設定 ----
-# source_type = "github"
+# ---- GitHub版のみ設定（CodeCommit版を使う場合はこのブロックを削除してよい） ----
+# source_type   = "github"
 # github_owner  = "your-github-username"
 # github_repo   = "your-repo-name"
 # github_branch = "main"
