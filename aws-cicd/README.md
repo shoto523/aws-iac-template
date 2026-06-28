@@ -91,6 +91,7 @@ Terraform版とCloudFormation版の両方を提供します。
 | 順番 | ファイル | 内容 |
 |---|---|---|
 | 1 | [docs/design.md](docs/design.md) | 設計書。スコープ・アーキテクチャ・インターフェース定義を確認する |
+| 2 | [docs/terraform_guide.md](docs/terraform_guide.md) | Terraform 実行手順。tfstate バケット作成から terraform destroy まで |
 | 2 | [docs/setup_guide.md](docs/setup_guide.md) | CodeCommit版 接続手順。ローカルとAWSの接続設定を行う |
 | 2 | [docs/setup_guide_github.md](docs/setup_guide_github.md) | GitHub版 接続手順。CodeStar Connectionsの承認手順を行う |
 | - | [docs/resource_design.md](docs/resource_design.md) | リソース詳細設計書（Terraform版）。各AWSリソースの名前・設定値・IAM権限の詳細 |
@@ -158,6 +159,9 @@ aws-cicd/
 ├── buildspec.yml                  # CodeBuildビルド定義（アプリリポジトリのルートに配置して使用）
 ├── docs/
 │   ├── design.md                  # 設計書（スコープ・インターフェース定義）
+│   ├── terraform_guide.md         # Terraform 実行手順
+│   ├── resource_design.md         # リソース詳細設計書（Terraform版）
+│   ├── resource_design_cfn.md     # リソース詳細設計書（CloudFormation版）
 │   ├── buildspec_design.md        # buildspec.yml 設計書
 │   ├── setup_guide.md             # CodeCommit版 接続セットアップ手順
 │   ├── setup_guide_github.md      # GitHub版 接続セットアップ手順
