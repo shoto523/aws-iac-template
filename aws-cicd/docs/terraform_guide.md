@@ -36,12 +36,19 @@ aws sts get-caller-identity
 Terraform のステートファイルを S3 で管理するため、事前にバケットを作成する。
 
 ```sh
+# S3バケットを作成する
+# --bucket                      : バケット名（グローバルで一意な名前をつける。例: mycompany-tfstate-ap-northeast-1）
+# --region                      : バケットを作成するリージョン
+# --create-bucket-configuration : us-east-1 以外のリージョンで作成する際に必須のオプション
 aws s3api create-bucket \
   --bucket <YOUR_TFSTATE_BUCKET> \
   --region ap-northeast-1 \
   --create-bucket-configuration LocationConstraint=ap-northeast-1
 
-# バージョニング有効化（推奨）
+# バージョニングを有効化する
+# tfstate が更新されるたびに以前のバージョンが保持されるため、
+# 誤って terraform apply した場合などにロールバックが可能になる
+# Status=Enabled : バージョニングをオンにする
 aws s3api put-bucket-versioning \
   --bucket <YOUR_TFSTATE_BUCKET> \
   --versioning-configuration Status=Enabled

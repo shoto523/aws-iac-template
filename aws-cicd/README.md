@@ -109,10 +109,17 @@ Terraform版とCloudFormation版の両方を提供します。
 - Terraform >= 1.6（Terraform版を使う場合）
 - **tfstate 保存用 S3 バケットが作成済みであること**（Terraform版を使う場合・初回のみ）
   ```powershell
+  # S3バケットを作成する
+  # --bucket                              : バケット名（グローバルで一意な名前をつける）
+  # --region                              : バケットを作成するリージョン
+  # --create-bucket-configuration         : us-east-1 以外のリージョンで作成する際に必須
   aws s3api create-bucket `
     --bucket <your-tfstate-bucket-name> `
     --region ap-northeast-1 `
     --create-bucket-configuration LocationConstraint=ap-northeast-1
+
+  # バージョニングを有効化する（tfstateの変更履歴を残すため推奨）
+  # Status=Enabled : バージョニングをオンにする
   aws s3api put-bucket-versioning `
     --bucket <your-tfstate-bucket-name> `
     --versioning-configuration Status=Enabled
