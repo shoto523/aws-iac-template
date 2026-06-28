@@ -386,6 +386,7 @@ root main.tf（頂点）
 
 - AWS CLI v2 インストール済み・認証情報設定済み
 - Terraform >= 1.6（Terraform版を使う場合）
+- **tfstate 保存用 S3 バケットが作成済みであること**（Terraform版・初回のみ）。`terraform init` 実行前に AWS CLI で手動作成する。詳細は [docs/terraform_guide.md](terraform_guide.md) Step 0 を参照
 - Deploy Stageを動作させる場合、以下いずれかを満たすこと
   - 新規ECS：`aws-app` がデプロイ済みで、出力値をパラメータに設定済みであること
   - 既存ECS：ECS / ALB / CodeDeploy Application + Deployment Group が設定済みで、パラメータに設定済みであること

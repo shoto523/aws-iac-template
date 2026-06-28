@@ -107,6 +107,16 @@ Terraform版とCloudFormation版の両方を提供します。
 
 - AWS CLI v2 インストール済み・認証情報設定済み
 - Terraform >= 1.6（Terraform版を使う場合）
+- **tfstate 保存用 S3 バケットが作成済みであること**（Terraform版を使う場合・初回のみ）
+  ```powershell
+  aws s3api create-bucket `
+    --bucket <your-tfstate-bucket-name> `
+    --region ap-northeast-1 `
+    --create-bucket-configuration LocationConstraint=ap-northeast-1
+  aws s3api put-bucket-versioning `
+    --bucket <your-tfstate-bucket-name> `
+    --versioning-configuration Status=Enabled
+  ```
 - Deploy Stageを動作させる場合は `aws-app` のデプロイ済み、または既存ECS / CodeDeploy が設定済みであること
 
 ### Step 1: 設計書を読む

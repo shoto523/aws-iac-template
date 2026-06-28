@@ -178,6 +178,7 @@ aws-app/
 
 - AWS CLI v2 インストール済み・認証情報設定済み
 - Terraform >= 1.6（Terraform版を使う場合）
+- **tfstate 保存用 S3 バケットが作成済みであること**（Terraform版・初回のみ）。`terraform init` 実行前に AWS CLI で手動作成する
 - VPC / Subnet / Security Group が構築済みであること
 - `aws-cicd` のECRデプロイが完了していること（`ecr_repository_url` が必要）
 
