@@ -165,7 +165,7 @@ CodeCommit版との差分のみ記載する。
 **Terraform の場合**（`terraform.tfvars`）
 
 ```hcl
-# CodeCommit版
+# CodeCommit版（github関連の行は削除またはコメントアウト）
 source_type       = "codecommit"
 codecommit_branch = "main"
 
