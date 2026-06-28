@@ -163,3 +163,24 @@ push 後、AWS コンソールで確認します。
 
 - Windows の資格情報マネージャーに古い CodeCommit の認証情報が残っている可能性があります
 - コントロールパネル → 資格情報マネージャー → Windows 資格情報 → `git:https://git-codecommit` を削除して再試行する
+
+### Git Credential Manager (GCM) のダイアログが表示されて認証できない場合
+
+**症状**: `credential-helper` を設定済みなのに GCM のダイアログが起動し、認証に失敗する
+
+**原因**: GCM がグローバルの `credential.helper` より優先されるため、CodeCommit 用の認証ヘルパーが無視される
+
+**解決策**: CodeCommit の URL に対してのみ認証ヘルパーを明示的にスコープ指定する
+
+```powershell
+git config --global credential.https://git-codecommit.ap-northeast-1.amazonaws.com.helper "!aws codecommit credential-helper $@"
+git config --global credential.https://git-codecommit.ap-northeast-1.amazonaws.com.UseHttpPath true
+```
+
+設定確認：
+
+```powershell
+git config --global --list | Select-String "credential"
+```
+
+> Step 3 のグローバル設定（`credential.helper`）と併用可能です。URL スコープ付きの設定が優先されます。
