@@ -94,6 +94,9 @@ Resources:
 
 ECS タスク定義のテンプレートです。`<IMAGE1_NAME>` は CodeDeploy が自動で実際のイメージ URI に置換します。
 
+**コンテナ環境変数（`DATABASE_URL` 等のアプリ固有の設定値）はここに記載します。**  
+IaC（Terraform / CloudFormation）は管理しないため、アプリ開発者がここで直接設定してください。
+
 ```json
 {
   "family": "my-app",
@@ -108,6 +111,11 @@ ECS タスク定義のテンプレートです。`<IMAGE1_NAME>` は CodeDeploy 
           "containerPort": 80,
           "protocol": "tcp"
         }
+      ],
+      "environment": [
+        {"name": "APP_ENV",      "value": "production"},
+        {"name": "DATABASE_URL", "value": "postgres://..."},
+        {"name": "PORT",         "value": "80"}
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -126,6 +134,15 @@ ECS タスク定義のテンプレートです。`<IMAGE1_NAME>` は CodeDeploy 
 ```
 
 > `executionRoleArn` は `aws-app` の出力値（ECS Task Execution Role ARN）を設定してください。
+
+| フィールド | 役割 | 管理場所 |
+|---|---|---|
+| `environment[].name/value` | アプリが参照する環境変数（DB接続先・ポート番号等） | **アプリ開発者が `taskdef.json` に記載** |
+| `executionRoleArn` | ECSがECRやSecrets Managerにアクセスする際の権限 | `aws-app` の出力値を設定 |
+| `cpu` / `memory` | タスクのリソース割り当て | アプリの要件に合わせて変更 |
+
+> **シークレット（パスワード・APIキー等）を環境変数に直書きしないこと。**  
+> AWS Secrets Manager または AWS Systems Manager Parameter Store に格納し、`secrets` フィールドで参照する方法を推奨します。
 
 ---
 
