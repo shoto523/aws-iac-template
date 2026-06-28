@@ -56,8 +56,7 @@ aws_region   = "ap-northeast-1"
 
 # ネットワーク情報（AWSコンソール または aws ec2 コマンドで確認した値を設定）
 vpc_id                = "vpc-xxxxxxxx"
-public_subnet_ids     = ["subnet-aaa", "subnet-bbb"]   # ALB 配置先（複数）
-private_subnet_ids    = ["subnet-ccc", "subnet-ddd"]   # ECSタスク配置先（複数）
+public_subnet_ids     = ["subnet-aaa", "subnet-bbb"]   # ALB・ECSタスク配置先（異なるAZに2つ以上）
 alb_security_group_id = "sg-xxxxxxxx"                  # ALB 用セキュリティグループ
 ecs_security_group_id = "sg-yyyyyyyy"                  # ECSタスク用セキュリティグループ
 
