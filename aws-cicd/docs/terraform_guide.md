@@ -203,8 +203,7 @@ cp terraform.tfvars.example terraform.tfvars
 project_name       = "my-app"
 aws_region         = "ap-northeast-1"
 vpc_id             = "vpc-xxxxxxxx"
-public_subnet_ids  = ["subnet-aaa", "subnet-bbb"]
-private_subnet_ids = ["subnet-ccc", "subnet-ddd"]
+public_subnet_ids  = ["subnet-aaa", "subnet-bbb"]  # ALB・ECSタスク共通（異なるAZに2つ以上）
 alb_security_group_id = "sg-xxxxxxxx"
 ecs_security_group_id = "sg-yyyyyyyy"
 container_name     = "my-app"

@@ -16,7 +16,7 @@ module "ecs" {
   source                    = "./modules/ecs"
   project_name              = var.project_name
   aws_region                = var.aws_region
-  private_subnet_ids        = var.private_subnet_ids
+  public_subnet_ids         = var.public_subnet_ids
   ecs_security_group_id     = var.ecs_security_group_id
   container_name            = var.container_name
   container_port            = var.container_port

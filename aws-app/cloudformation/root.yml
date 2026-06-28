@@ -28,10 +28,6 @@ Parameters:
     Type: CommaDelimitedList
     Description: ALBを配置するパブリックサブネットID（カンマ区切り）
 
-  PrivateSubnetIds:
-    Type: CommaDelimitedList
-    Description: ECSタスクを配置するプライベートサブネットID（カンマ区切り）
-
   AlbSecurityGroupId:
     Type: String
     Description: ALB用セキュリティグループID
@@ -78,7 +74,7 @@ Resources:
       TemplateURL: stacks/03-ecs.yaml
       Parameters:
         ProjectName: !Ref ProjectName
-        PrivateSubnetIds: !Join [",", !Ref PrivateSubnetIds]
+        PublicSubnetIds: !Join [",", !Ref PublicSubnetIds]
         EcsSecurityGroupId: !Ref EcsSecurityGroupId
         ContainerName: !Ref ContainerName
         ContainerPort: !Ref ContainerPort

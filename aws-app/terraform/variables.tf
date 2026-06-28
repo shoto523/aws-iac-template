@@ -17,12 +17,7 @@ variable "vpc_id" {
 
 variable "public_subnet_ids" {
   type        = list(string)
-  description = "ALBを配置するパブリックサブネットID（複数）"
-}
-
-variable "private_subnet_ids" {
-  type        = list(string)
-  description = "ECSタスクを配置するプライベートサブネットID（複数）"
+  description = "ALB・ECSタスクを配置するパブリックサブネットID（異なるAZに2つ以上）"
 }
 
 variable "alb_security_group_id" {

@@ -8,9 +8,9 @@ variable "aws_region" {
   description = "デプロイ先リージョン"
 }
 
-variable "private_subnet_ids" {
+variable "public_subnet_ids" {
   type        = list(string)
-  description = "ECSタスクを配置するプライベートサブネットID（複数）"
+  description = "ECSタスクを配置するパブリックサブネットID（ALBと同じサブネット）"
 }
 
 variable "ecs_security_group_id" {

@@ -4,7 +4,7 @@ Description: "aws-app: ECS Cluster + Task Definition + Service"
 Parameters:
   ProjectName:
     Type: String
-  PrivateSubnetIds:
+  PublicSubnetIds:
     Type: CommaDelimitedList
   EcsSecurityGroupId:
     Type: String
@@ -89,10 +89,10 @@ Resources:
         Type: CODE_DEPLOY
       NetworkConfiguration:
         AwsvpcConfiguration:
-          Subnets: !Ref PrivateSubnetIds
+          Subnets: !Ref PublicSubnetIds
           SecurityGroups:
             - !Ref EcsSecurityGroupId
-          AssignPublicIp: DISABLED
+          AssignPublicIp: ENABLED
       LoadBalancers:
         - ContainerName: !Ref ContainerName
           ContainerPort: !Ref ContainerPort
