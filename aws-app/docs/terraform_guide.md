@@ -88,6 +88,12 @@ terraform init \
   -backend-config="region=ap-northeast-1"
 ```
 
+| オプション | 指定する値 | 例 |
+|---|---|---|
+| `bucket` | **バケット名のみ**（URLやARNではない） | `mycompany-tfstate-ap-northeast-1` |
+| `key` | tfstateファイルのS3上のパス | `aws-app/terraform.tfstate` |
+| `region` | バケットを作成したリージョン | `ap-northeast-1` |
+
 > `aws-cicd` と同じ S3 バケットを使いまわせる。`key` を `aws-app/terraform.tfstate` とすることで別ファイルとして管理される。
 
 成功すると以下のメッセージが表示される：

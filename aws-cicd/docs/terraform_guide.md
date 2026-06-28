@@ -107,6 +107,12 @@ terraform init \
   -backend-config="region=ap-northeast-1"
 ```
 
+| オプション | 指定する値 | 例 |
+|---|---|---|
+| `bucket` | **バケット名のみ**（URLやARNではない） | `mycompany-tfstate-ap-northeast-1` |
+| `key` | tfstateファイルのS3上のパス | `aws-cicd/terraform.tfstate` |
+| `region` | バケットを作成したリージョン | `ap-northeast-1` |
+
 成功すると以下のメッセージが表示される：
 
 ```
