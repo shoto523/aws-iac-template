@@ -93,6 +93,7 @@ Terraform版とCloudFormation版の両方を提供します。
 | 1 | [docs/design.md](docs/design.md) | 設計書。スコープ・アーキテクチャ・インターフェース定義を確認する |
 | 2 | [docs/setup_guide.md](docs/setup_guide.md) | CodeCommit版 接続手順。ローカルとAWSの接続設定を行う |
 | 2 | [docs/setup_guide_github.md](docs/setup_guide_github.md) | GitHub版 接続手順。CodeStar Connectionsの承認手順を行う |
+| - | [docs/resource_design.md](docs/resource_design.md) | リソース詳細設計書。各AWSリソースの名前・設定値・IAM権限の詳細 |
 | - | [docs/buildspec_design.md](docs/buildspec_design.md) | buildspec.yml 設計書。アプリ側で用意するファイル（appspec.yaml・taskdef.json）の説明 |
 | - | [docs/qa.md](docs/qa.md) | よくある質問。既存ECS連携手順・Deploy Stageエラー対処・用語解説など |
 
