@@ -10,5 +10,5 @@ output "pipeline_name" {
 
 output "artifact_bucket_name" {
   description = "S3アーティファクトバケット名"
-  value       = module.pipeline.artifact_bucket_name
+  value       = aws_s3_bucket.artifact.bucket
 }

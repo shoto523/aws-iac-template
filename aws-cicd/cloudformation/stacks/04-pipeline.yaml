@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "aws-cicd: CodePipeline + CodeBuild + S3 + CloudWatch Logs (+ EventBridge for CodeCommit)"
+
+Parameters:
+  ProjectName:
+    Type: String
+  SourceType:
+    Type: String
+    AllowedValues: [codecommit, github]
+  CodeCommitRepoName:
+    Type: String
+    Default: ""
+  CodeCommitBranch:
+    Type: String
+    Default: main
+  CodeCommitRepoArn:
+    Type: String
+    Default: ""
+  ConnectionArn:
+    Type: String
+    Default: ""
+  GitHubOwner:
+    Type: String
+    Default: ""
+  GitHubRepo:
+    Type: String
+    Default: ""
+  GitHubBranch:
+    Type: String
+    Default: main
+  EcrRepositoryUrl:
+    Type: String
+  CodePipelineRoleArn:
+    Type: String
+  CodeBuildRoleArn:
+    Type: String
+  EventBridgeRoleArn:
+    Type: String
+    Default: ""
+  EcsClusterName:
+    Type: String
+    Default: ""
+  EcsServiceName:
+    Type: String
+    Default: ""
+  CodeDeployAppName:
+    Type: String
+    Default: ""
+  CodeDeployGroupName:
+    Type: String
+    Default: ""
+
+Conditions:
+  IsCodeCommit: !Equals [!Ref SourceType, codecommit]
+  IsGitHub: !Equals [!Ref SourceType, github]
+
+Resources:
+  # ----------------------------------------
+  # S3 アーティファクトバケット
+  # ----------------------------------------
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-pipeline-artifacts-${AWS::AccountId}"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # CloudWatch Logs
+  # ----------------------------------------
+  CodeBuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/codebuild/${ProjectName}"
+      RetentionInDays: 30
+
+  # ----------------------------------------
+  # CodeBuild
+  # ----------------------------------------
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${ProjectName}-build"
+      ServiceRole: !Ref CodeBuildRoleArn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: ECR_REPOSITORY_URI
+            Value: !Ref EcrRepositoryUrl
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: CONTAINER_NAME
+            Value: !Ref ProjectName
+      LogsConfig:
+        CloudWatchLogs:
+          GroupName: !Ref CodeBuildLogGroup
+          StreamName: build
+          Status: ENABLED
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # CodePipeline
+  # ----------------------------------------
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub "${ProjectName}-pipeline"
+      RoleArn: !Ref CodePipelineRoleArn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - !If
+              - IsCodeCommit
+              - Name: Source
+                ActionTypeId:
+                  Category: Source
+                  Owner: AWS
+                  Provider: CodeCommit
+                  Version: "1"
+                OutputArtifacts:
+                  - Name: source_output
+                Configuration:
+                  RepositoryName: !Ref CodeCommitRepoName
+                  BranchName: !Ref CodeCommitBranch
+                  OutputArtifactFormat: CODE_ZIP
+                  PollForSourceChanges: false
+              - Name: Source
+                ActionTypeId:
+                  Category: Source
+                  Owner: AWS
+                  Provider: CodeStarSourceConnection
+                  Version: "1"
+                OutputArtifacts:
+                  - Name: source_output
+                Configuration:
+                  ConnectionArn: !Ref ConnectionArn
+                  FullRepositoryId: !Sub "${GitHubOwner}/${GitHubRepo}"
+                  BranchName: !Ref GitHubBranch
+                  OutputArtifactFormat: CODE_ZIP
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              InputArtifacts:
+                - Name: source_output
+              OutputArtifacts:
+                - Name: build_output
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CodeDeployToECS
+                Version: "1"
+              InputArtifacts:
+                - Name: build_output
+              Configuration:
+                ApplicationName: !Ref CodeDeployAppName
+                DeploymentGroupName: !Ref CodeDeployGroupName
+                TaskDefinitionTemplateArtifact: build_output
+                TaskDefinitionTemplatePath: taskdef.json
+                AppSpecTemplateArtifact: build_output
+                AppSpecTemplatePath: appspec.yaml
+                Image1ArtifactName: build_output
+                Image1ContainerName: IMAGE1_NAME
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # EventBridge（CodeCommit版のみ）
+  # ----------------------------------------
+  CodeCommitEventRule:
+    Type: AWS::Events::Rule
+    Condition: IsCodeCommit
+    Properties:
+      Name: !Sub "${ProjectName}-codecommit-push"
+      Description: "CodeCommit push → CodePipeline trigger"
+      EventPattern:
+        source:
+          - aws.codecommit
+        detail-type:
+          - CodeCommit Repository State Change
+        resources:
+          - !Ref CodeCommitRepoArn
+        detail:
+          event:
+            - referenceCreated
+            - referenceUpdated
+          referenceType:
+            - branch
+          referenceName:
+            - !Ref CodeCommitBranch
+      Targets:
+        - Id: CodePipeline
+          Arn: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${ProjectName}-pipeline"
+          RoleArn: !Ref EventBridgeRoleArn
+
+Outputs:
+  PipelineName:
+    Value: !Sub "${ProjectName}-pipeline"
+    Export:
+      Name: !Sub "${ProjectName}-pipeline-name"
+
+  ArtifactBucketName:
+    Value: !Ref ArtifactBucket
+    Export:
+      Name: !Sub "${ProjectName}-artifact-bucket"

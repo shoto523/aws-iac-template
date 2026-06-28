@@ -149,13 +149,23 @@ terraform apply
 
 ```powershell
 cd cloudformation
-aws cloudformation deploy `
+# Step 1: 子スタックテンプレートをS3にアップロードし、参照先URLを変換する
+aws cloudformation package `
   --template-file root.yml `
+  --s3-bucket <cfn-template-bucket> `
+  --output-template-file root-packaged.yml `
+  --region ap-northeast-1
+
+# Step 2: パッケージ済みテンプレートをデプロイする
+aws cloudformation deploy `
+  --template-file root-packaged.yml `
   --stack-name <project_name>-cicd `
   --parameter-overrides ProjectName=<project_name> SourceType=codecommit `
   --capabilities CAPABILITY_NAMED_IAM `
   --region ap-northeast-1
 ```
+
+> `<cfn-template-bucket>` は任意のS3バケット（CloudFormationテンプレートのアップロード用）。tfstateバケットと同じバケットを使いまわすことも可能。
 
 ### Step 3: ソースリポジトリと接続してコードを push する
 

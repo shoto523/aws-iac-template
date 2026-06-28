@@ -50,6 +50,17 @@ variable "github_branch" {
   default = "main"
 }
 
+# S3アーティファクトバケット（rootで作成済み）
+variable "artifact_bucket_name" {
+  type        = string
+  description = "S3アーティファクトバケット名"
+}
+
+variable "artifact_bucket_arn" {
+  type        = string
+  description = "S3アーティファクトバケットのARN"
+}
+
 # 共通
 variable "ecr_repository_url" {
   type        = string

@@ -1,3 +1,37 @@
+data "aws_caller_identity" "current" {}
+
+# ----------------------------------------
+# S3 アーティファクトバケット（rootで定義してIAMとPipelineの循環依存を解消）
+# ----------------------------------------
+resource "aws_s3_bucket" "artifact" {
+  bucket        = "${var.project_name}-pipeline-artifacts-${data.aws_caller_identity.current.account_id}"
+  force_destroy = true
+  tags          = { Project = var.project_name }
+}
+
+resource "aws_s3_bucket_versioning" "artifact" {
+  bucket = aws_s3_bucket.artifact.id
+  versioning_configuration { status = "Enabled" }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "artifact" {
+  bucket = aws_s3_bucket.artifact.id
+  rule {
+    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "artifact" {
+  bucket                  = aws_s3_bucket.artifact.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# ----------------------------------------
+# モジュール
+# ----------------------------------------
 module "ecr" {
   source          = "./modules/ecr"
   project_name    = var.project_name
@@ -21,7 +55,7 @@ module "iam" {
   source              = "./modules/iam"
   project_name        = var.project_name
   source_type         = var.source_type
-  artifact_bucket_arn = module.pipeline.artifact_bucket_arn
+  artifact_bucket_arn = aws_s3_bucket.artifact.arn
   ecr_repository_arn  = module.ecr.repository_arn
   codecommit_repo_arn = var.source_type == "codecommit" ? module.source_codecommit[0].repository_arn : ""
   connection_arn      = var.source_type == "github" ? module.source_github[0].connection_arn : ""
@@ -42,6 +76,9 @@ module "pipeline" {
   github_owner   = var.github_owner
   github_repo    = var.github_repo
   github_branch  = var.github_branch
+
+  artifact_bucket_name = aws_s3_bucket.artifact.bucket
+  artifact_bucket_arn  = aws_s3_bucket.artifact.arn
 
   ecr_repository_url = module.ecr.repository_url
 

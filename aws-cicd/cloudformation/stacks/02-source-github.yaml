@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "aws-cicd: CodeStar Connections (GitHub版のみデプロイ)"
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: リソース名のプレフィックス
+
+Resources:
+  GitHubConnection:
+    Type: AWS::CodeStarConnections::Connection
+    Properties:
+      ConnectionName: !Sub "${ProjectName}-github"
+      ProviderType: GitHub
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+# デプロイ後、AWSコンソールで手動承認が必要
+# コンソール: Developer Tools → Connections → 対象接続を選択 → 保留中の接続を更新
+
+Outputs:
+  ConnectionArn:
+    Description: CodeStar Connection ARN（初期ステータスはPENDING、手動承認後にAVAILABLEになる）
+    Value: !Ref GitHubConnection
+    Export:
+      Name: !Sub "${ProjectName}-connection-arn"

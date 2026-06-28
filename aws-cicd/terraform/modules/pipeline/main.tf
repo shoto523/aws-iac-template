@@ -1,34 +1,3 @@
-resource "aws_s3_bucket" "artifact" {
-  bucket        = "${var.project_name}-pipeline-artifacts-${data.aws_caller_identity.current.account_id}"
-  force_destroy = true
-
-  tags = { Project = var.project_name }
-}
-
-resource "aws_s3_bucket_versioning" "artifact" {
-  bucket = aws_s3_bucket.artifact.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "artifact" {
-  bucket = aws_s3_bucket.artifact.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_s3_bucket_public_access_block" "artifact" {
-  bucket                  = aws_s3_bucket.artifact.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
 # ----------------------------------------
 # CloudWatch Logs（CodeBuildビルドログ）
 # ----------------------------------------
@@ -96,7 +65,7 @@ resource "aws_codepipeline" "main" {
   role_arn = var.codepipeline_role_arn
 
   artifact_store {
-    location = aws_s3_bucket.artifact.bucket
+    location = var.artifact_bucket_name
     type     = "S3"
   }
 
@@ -206,11 +175,9 @@ resource "aws_cloudwatch_event_rule" "codecommit_push" {
 }
 
 resource "aws_cloudwatch_event_target" "pipeline" {
-  count    = var.source_type == "codecommit" ? 1 : 0
-  rule     = aws_cloudwatch_event_rule.codecommit_push[0].name
+  count     = var.source_type == "codecommit" ? 1 : 0
+  rule      = aws_cloudwatch_event_rule.codecommit_push[0].name
   target_id = "CodePipeline"
-  arn      = aws_codepipeline.main.arn
-  role_arn = var.eventbridge_role_arn
+  arn       = aws_codepipeline.main.arn
+  role_arn  = var.eventbridge_role_arn
 }
-
-data "aws_caller_identity" "current" {}

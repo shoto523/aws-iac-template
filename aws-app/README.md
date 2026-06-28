@@ -103,13 +103,31 @@ terraform apply
 
 ```powershell
 cd cloudformation
-aws cloudformation deploy `
+# Step 1: 子スタックテンプレートをS3にアップロードし、参照先URLを変換する
+aws cloudformation package `
   --template-file root.yml `
+  --s3-bucket <cfn-template-bucket> `
+  --output-template-file root-packaged.yml `
+  --region ap-northeast-1
+
+# Step 2: パッケージ済みテンプレートをデプロイする
+aws cloudformation deploy `
+  --template-file root-packaged.yml `
   --stack-name <project_name>-app `
-  --parameter-overrides ProjectName=<project_name> `
+  --parameter-overrides `
+    ProjectName=<project_name> `
+    VpcId=<vpc_id> `
+    PublicSubnetIds=<subnet_a>,<subnet_b> `
+    PrivateSubnetIds=<subnet_c>,<subnet_d> `
+    AlbSecurityGroupId=<alb_sg_id> `
+    EcsSecurityGroupId=<ecs_sg_id> `
+    ContainerName=<container_name> `
+    EcrRepositoryUrl=<ecr_repository_url> `
   --capabilities CAPABILITY_NAMED_IAM `
   --region ap-northeast-1
 ```
+
+> `<cfn-template-bucket>` は任意のS3バケット（CloudFormationテンプレートのアップロード用）。tfstateバケットと同じバケットを使いまわすことも可能。
 
 ### Step 3: 出力値を `aws-cicd` に渡す
 

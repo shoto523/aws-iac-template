@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "aws-cicd: CodeCommit Repository (CodeCommit版のみデプロイ)"
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: リソース名のプレフィックス
+
+Resources:
+  CodeCommitRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Ref ProjectName
+      RepositoryDescription: !Sub "${ProjectName} source repository"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  RepositoryName:
+    Description: CodeCommitリポジトリ名
+    Value: !GetAtt CodeCommitRepository.Name
+    Export:
+      Name: !Sub "${ProjectName}-codecommit-name"
+
+  RepositoryArn:
+    Description: CodeCommitリポジトリARN
+    Value: !GetAtt CodeCommitRepository.Arn
+    Export:
+      Name: !Sub "${ProjectName}-codecommit-arn"
