@@ -139,7 +139,8 @@ cd terraform
 cp terraform.tfvars.example terraform.tfvars
 # terraform.tfvars を環境に合わせて編集
 
-terraform init
+# terraform init には -backend-config フラグが必要（詳細は docs/terraform_guide.md 参照）
+terraform init -backend-config="bucket=<YOUR_TFSTATE_BUCKET>" -backend-config="key=aws-cicd/terraform.tfstate" -backend-config="region=ap-northeast-1"
 terraform plan
 terraform apply
 ```

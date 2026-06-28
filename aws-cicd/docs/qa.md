@@ -37,13 +37,18 @@ codedeploy_group_name = "既存のCodeDeployデプロイグループ名"
 **Step 2: CloudFormationパラメータに渡す（CloudFormation版）**
 
 ```powershell
-./deploy.sh `
-  --project-name      <project_name> `
-  --region            ap-northeast-1 `
-  --ecs-cluster       既存のECSクラスター名 `
-  --ecs-service       既存のECSサービス名 `
-  --codedeploy-app    既存のCodeDeployアプリ名 `
-  --codedeploy-group  既存のCodeDeployデプロイグループ名
+aws cloudformation deploy `
+  --template-file root.yml `
+  --stack-name <project_name>-cicd `
+  --parameter-overrides `
+    ProjectName=<project_name> `
+    SourceType=codecommit `
+    EcsClusterName=既存のECSクラスター名 `
+    EcsServiceName=既存のECSサービス名 `
+    CodeDeployAppName=既存のCodeDeployアプリ名 `
+    CodeDeployGroupName=既存のCodeDeployデプロイグループ名 `
+  --capabilities CAPABILITY_NAMED_IAM `
+  --region ap-northeast-1
 ```
 
 **Step 3: デプロイして動作確認**
@@ -117,6 +122,17 @@ aws cloudformation describe-stacks `
 ```
 
 出力された `codedeploy_app_name` と `codedeploy_group_name` を Q1 の手順で `aws-cicd` のパラメータに渡します。
+
+---
+
+## Q3. Deploy Stageだけ失敗する場合の確認ポイント
+
+| 確認項目 | 確認方法 |
+|---|---|
+| CodeDeploy Deployment Groupが存在するか | `aws deploy get-deployment-group --application-name <app> --deployment-group-name <group>` |
+| ECSサービスのデプロイコントローラーが `CODE_DEPLOY` か | Q2のStep 2参照 |
+| ALBにBlue/Green用Target Groupが2つあるか | AWSコンソール → EC2 → ターゲットグループ |
+| IAMロールにCodeDeploy実行権限があるか | AWSコンソール → IAM → ロール |
 
 ---
 
@@ -211,14 +227,3 @@ your-app-repo/
 ```
 
 `aws-cicd/buildspec.yml` にサンプルを用意しています。アプリリポジトリ作成時にコピーして使用してください。
-
----
-
-## Q3. Deploy Stageだけ失敗する場合の確認ポイント
-
-| 確認項目 | 確認方法 |
-|---|---|
-| CodeDeploy Deployment Groupが存在するか | `aws deploy get-deployment-group --application-name <app> --deployment-group-name <group>` |
-| ECSサービスのデプロイコントローラーが `CODE_DEPLOY` か | Q2のStep 2参照 |
-| ALBにBlue/Green用Target Groupが2つあるか | AWSコンソール → EC2 → ターゲットグループ |
-| IAMロールにCodeDeploy実行権限があるか | AWSコンソール → IAM → ロール |
