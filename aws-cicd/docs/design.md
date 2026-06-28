@@ -142,6 +142,27 @@ CodeCommit版との差分のみ記載する。
 | Terraform | `terraform.tfvars` に記載 |
 | CloudFormation | `root.yml` のパラメータ（`Parameters` セクション）で渡す |
 
+### Terraform のパラメータ入力挙動
+
+`terraform apply` 実行時の挙動はパラメータのデフォルト値の有無によって異なる。
+
+| パラメータ | デフォルト値 | `terraform.tfvars` なしで apply した場合 |
+|---|---|---|
+| `project_name` | なし | **ターミナルで対話入力を求められる** |
+| `source_type` | なし | **ターミナルで対話入力を求められる** |
+| `aws_region` | `ap-northeast-1` | 求められない（デフォルト使用） |
+| `codecommit_branch` | `main` | 求められない（デフォルト使用） |
+| `github_owner` / `github_repo` / `github_branch` | `""` / `""` / `main` | 求められない（デフォルト使用） |
+| `ecs_cluster_name` 等（アプリ参照値） | `""` | 求められない（デフォルト使用） |
+
+**推奨**: `terraform.tfvars.example` をコピーして `terraform.tfvars` を作成し、事前にすべての値を設定してから `terraform apply` を実行する。これにより対話入力は発生しない。
+
+```powershell
+cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars を編集してから実行
+terraform apply
+```
+
 ### 入力パラメータ（ユーザー設定値）
 
 | 分類 | パラメータ名 | 説明 | 例 |
