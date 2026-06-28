@@ -158,6 +158,38 @@ CodeCommit版との差分のみ記載する。
 | アプリ参照値 | `codedeploy_app_name` | CodeDeployアプリ名（`aws-app`の出力値） | `my-app-deploy` |
 | アプリ参照値 | `codedeploy_group_name` | CodeDeployデプロイグループ名（`aws-app`の出力値） | `my-app-deploy-group` |
 
+### source_type の設定方法
+
+`source_type` がCodeCommit版／GitHub版の切り替えスイッチとなる。デプロイ前に必ず設定すること。
+
+**Terraform の場合**（`terraform.tfvars`）
+
+```hcl
+# CodeCommit版
+source_type       = "codecommit"
+codecommit_branch = "main"
+
+# GitHub版（codecommit関連の行は削除またはコメントアウト）
+source_type    = "github"
+github_owner   = "your-github-username"
+github_repo    = "your-repo-name"
+github_branch  = "main"
+```
+
+> `terraform.tfvars.example` をコピーして使用する（`cp terraform.tfvars.example terraform.tfvars`）。
+
+**CloudFormation の場合**（`aws cloudformation deploy` のパラメータ）
+
+```powershell
+# CodeCommit版
+--parameter-overrides ProjectName=<project_name> SourceType=codecommit
+
+# GitHub版
+--parameter-overrides ProjectName=<project_name> SourceType=github GitHubOwner=<owner> GitHubRepo=<repo> GitHubBranch=main
+```
+
+---
+
 ### 出力
 
 | 出力名 | 説明 | 用途 |
