@@ -1,0 +1,12 @@
+# このファイルをアプリリポジトリのルートに配置して使用する
+# <TASK_DEFINITION> は CodeDeploy が自動で書き換えるため変更不要
+# ContainerName は taskdef.json の containerDefinitions[].name と一致させること
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: <TASK_DEFINITION>
+        LoadBalancerInfo:
+          ContainerName: "app"
+          ContainerPort: 80
