@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "aws-cicd: ECR Repository"
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: リソース名のプレフィックス
+
+Resources:
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ProjectName
+      ImageTagMutability: MUTABLE
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  EcrLifecyclePolicy:
+    Type: AWS::ECR::LifecyclePolicy
+    Properties:
+      RepositoryName: !Ref EcrRepository
+      LifecyclePolicyText: |
+        {
+          "rules": [
+            {
+              "rulePriority": 1,
+              "description": "最新10イメージを保持し、古いイメージを自動削除",
+              "selection": {
+                "tagStatus": "any",
+                "countType": "imageCountMoreThan",
+                "countNumber": 10
+              },
+              "action": {
+                "type": "expire"
+              }
+            }
+          ]
+        }
+
+Outputs:
+  EcrRepositoryUrl:
+    Description: ECRリポジトリのURI
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EcrRepository}"
+    Export:
+      Name: !Sub "${ProjectName}-ecr-url"
+
+  EcrRepositoryArn:
+    Description: ECRリポジトリのARN
+    Value: !GetAtt EcrRepository.Arn
+    Export:
+      Name: !Sub "${ProjectName}-ecr-arn"

@@ -1,0 +1,137 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "aws-app: ALB + Target Groups (Blue/Green) + Listeners"
+
+Parameters:
+  ProjectName:
+    Type: String
+  VpcId:
+    Type: String
+  PublicSubnetIds:
+    Type: CommaDelimitedList
+  AlbSecurityGroupId:
+    Type: String
+  ContainerPort:
+    Type: Number
+    Default: 80
+
+Resources:
+  # ----------------------------------------
+  # ALB
+  # ----------------------------------------
+  Alb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${ProjectName}-alb"
+      Type: application
+      Scheme: internet-facing
+      Subnets: !Ref PublicSubnetIds
+      SecurityGroups:
+        - !Ref AlbSecurityGroupId
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # Target Group（Blue）
+  # ----------------------------------------
+  TargetGroupBlue:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${ProjectName}-tg-blue"
+      TargetType: ip
+      Protocol: HTTP
+      Port: !Ref ContainerPort
+      VpcId: !Ref VpcId
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # Target Group（Green）
+  # ----------------------------------------
+  TargetGroupGreen:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${ProjectName}-tg-green"
+      TargetType: ip
+      Protocol: HTTP
+      Port: !Ref ContainerPort
+      VpcId: !Ref VpcId
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # Listener（本番 :80）
+  # ----------------------------------------
+  ListenerProd:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Alb
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroupBlue
+
+  # ----------------------------------------
+  # Listener（テスト :8080）
+  # ----------------------------------------
+  ListenerTest:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Alb
+      Port: 8080
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroupGreen
+
+Outputs:
+  AlbDnsName:
+    Value: !GetAtt Alb.DNSName
+    Export:
+      Name: !Sub "${ProjectName}-alb-dns"
+
+  AlbArn:
+    Value: !Ref Alb
+    Export:
+      Name: !Sub "${ProjectName}-alb-arn"
+
+  ListenerProdArn:
+    Value: !Ref ListenerProd
+    Export:
+      Name: !Sub "${ProjectName}-listener-prod-arn"
+
+  ListenerTestArn:
+    Value: !Ref ListenerTest
+    Export:
+      Name: !Sub "${ProjectName}-listener-test-arn"
+
+  TargetGroupBlueArn:
+    Value: !Ref TargetGroupBlue
+    Export:
+      Name: !Sub "${ProjectName}-tg-blue-arn"
+
+  TargetGroupGreenArn:
+    Value: !Ref TargetGroupGreen
+    Export:
+      Name: !Sub "${ProjectName}-tg-green-arn"
+
+  TargetGroupBlueName:
+    Value: !GetAtt TargetGroupBlue.TargetGroupName
+    Export:
+      Name: !Sub "${ProjectName}-tg-blue-name"
+
+  TargetGroupGreenName:
+    Value: !GetAtt TargetGroupGreen.TargetGroupName
+    Export:
+      Name: !Sub "${ProjectName}-tg-green-name"

@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "aws-app: CodeDeploy Application + Deployment Group (ECS Blue/Green)"
+
+Parameters:
+  ProjectName:
+    Type: String
+  CodeDeployRoleArn:
+    Type: String
+  EcsClusterName:
+    Type: String
+  EcsServiceName:
+    Type: String
+  TargetGroupBlueName:
+    Type: String
+  TargetGroupGreenName:
+    Type: String
+  ListenerProdArn:
+    Type: String
+  ListenerTestArn:
+    Type: String
+
+Resources:
+  # ----------------------------------------
+  # CodeDeploy Application
+  # ----------------------------------------
+  CodeDeployApp:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub "${ProjectName}-deploy"
+      ComputePlatform: ECS
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # CodeDeploy Deployment Group
+  # ----------------------------------------
+  DeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApp
+      DeploymentGroupName: !Sub "${ProjectName}-deploy-group"
+      ServiceRoleArn: !Ref CodeDeployRoleArn
+      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce
+      DeploymentStyle:
+        DeploymentType: BLUE_GREEN
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+      ECSServices:
+        - ClusterName: !Ref EcsClusterName
+          ServiceName: !Ref EcsServiceName
+      LoadBalancerInfo:
+        TargetGroupPairInfoList:
+          - ProdTrafficRoute:
+              ListenerArns:
+                - !Ref ListenerProdArn
+            TestTrafficRoute:
+              ListenerArns:
+                - !Ref ListenerTestArn
+            TargetGroups:
+              - Name: !Ref TargetGroupBlueName
+              - Name: !Ref TargetGroupGreenName
+      BlueGreenDeploymentConfiguration:
+        DeploymentReadyOption:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+          TerminationWaitTimeInMinutes: 5
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  CodeDeployAppName:
+    Value: !Ref CodeDeployApp
+    Export:
+      Name: !Sub "${ProjectName}-codedeploy-app-name"
+
+  CodeDeployGroupName:
+    Value: !GetAtt DeploymentGroup.DeploymentGroupName
+    Export:
+      Name: !Sub "${ProjectName}-codedeploy-group-name"

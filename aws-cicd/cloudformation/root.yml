@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "aws-cicd: CI/CD Pipeline Root Stack (ネストスタック頂点)"
+
+# 使い方:
+#   aws cloudformation package \
+#     --template-file root.yml \
+#     --s3-bucket <cfn-template-bucket> \
+#     --output-template-file root-packaged.yml \
+#     --region ap-northeast-1
+#
+#   aws cloudformation deploy \
+#     --template-file root-packaged.yml \
+#     --stack-name <project_name>-cicd \
+#     --parameter-overrides ProjectName=<project_name> SourceType=codecommit \
+#     --capabilities CAPABILITY_NAMED_IAM \
+#     --region ap-northeast-1
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: リソース名のプレフィックス（全リソース名の先頭に付く）
+
+  SourceType:
+    Type: String
+    Default: codecommit
+    AllowedValues: [codecommit, github]
+    Description: ソースリポジトリ種別（codecommit または github）
+
+  CodeCommitBranch:
+    Type: String
+    Default: main
+    Description: トリガー対象ブランチ（CodeCommit版）
+
+  GitHubOwner:
+    Type: String
+    Default: ""
+    Description: GitHubオーナー名（GitHub版）
+
+  GitHubRepo:
+    Type: String
+    Default: ""
+    Description: GitHubリポジトリ名（GitHub版）
+
+  GitHubBranch:
+    Type: String
+    Default: main
+    Description: トリガー対象ブランチ（GitHub版）
+
+  EcsClusterName:
+    Type: String
+    Default: ""
+    Description: デプロイ先ECSクラスター名（aws-appの出力値。初回は空白のままでよい）
+
+  EcsServiceName:
+    Type: String
+    Default: ""
+    Description: デプロイ先ECSサービス名（aws-appの出力値。初回は空白のままでよい）
+
+  CodeDeployAppName:
+    Type: String
+    Default: ""
+    Description: CodeDeployアプリ名（aws-appの出力値。初回は空白のままでよい）
+
+  CodeDeployGroupName:
+    Type: String
+    Default: ""
+    Description: CodeDeployデプロイグループ名（aws-appの出力値。初回は空白のままでよい）
+
+Conditions:
+  IsCodeCommit: !Equals [!Ref SourceType, codecommit]
+  IsGitHub: !Equals [!Ref SourceType, github]
+
+Resources:
+  EcrStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stacks/01-ecr.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+
+  SourceCodeCommitStack:
+    Type: AWS::CloudFormation::Stack
+    Condition: IsCodeCommit
+    Properties:
+      TemplateURL: stacks/02-source-codecommit.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+
+  SourceGitHubStack:
+    Type: AWS::CloudFormation::Stack
+    Condition: IsGitHub
+    Properties:
+      TemplateURL: stacks/02-source-github.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+
+  IamStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stacks/03-iam.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+        SourceType: !Ref SourceType
+        EcrRepositoryArn: !GetAtt EcrStack.Outputs.EcrRepositoryArn
+        CodeCommitRepositoryArn: !If
+          - IsCodeCommit
+          - !GetAtt SourceCodeCommitStack.Outputs.RepositoryArn
+          - ""
+        ConnectionArn: !If
+          - IsGitHub
+          - !GetAtt SourceGitHubStack.Outputs.ConnectionArn
+          - ""
+
+  PipelineStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stacks/04-pipeline.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+        SourceType: !Ref SourceType
+        CodeCommitRepoName: !If
+          - IsCodeCommit
+          - !GetAtt SourceCodeCommitStack.Outputs.RepositoryName
+          - ""
+        CodeCommitBranch: !Ref CodeCommitBranch
+        CodeCommitRepoArn: !If
+          - IsCodeCommit
+          - !GetAtt SourceCodeCommitStack.Outputs.RepositoryArn
+          - ""
+        ConnectionArn: !If
+          - IsGitHub
+          - !GetAtt SourceGitHubStack.Outputs.ConnectionArn
+          - ""
+        GitHubOwner: !Ref GitHubOwner
+        GitHubRepo: !Ref GitHubRepo
+        GitHubBranch: !Ref GitHubBranch
+        EcrRepositoryUrl: !GetAtt EcrStack.Outputs.EcrRepositoryUrl
+        CodePipelineRoleArn: !GetAtt IamStack.Outputs.CodePipelineRoleArn
+        CodeBuildRoleArn: !GetAtt IamStack.Outputs.CodeBuildRoleArn
+        EventBridgeRoleArn: !If
+          - IsCodeCommit
+          - !GetAtt IamStack.Outputs.EventBridgeRoleArn
+          - ""
+        EcsClusterName: !Ref EcsClusterName
+        EcsServiceName: !Ref EcsServiceName
+        CodeDeployAppName: !Ref CodeDeployAppName
+        CodeDeployGroupName: !Ref CodeDeployGroupName
+
+Outputs:
+  EcrRepositoryUrl:
+    Description: ECRリポジトリのURI（aws-appのtaskdef.jsonで使用）
+    Value: !GetAtt EcrStack.Outputs.EcrRepositoryUrl
+
+  PipelineName:
+    Description: CodePipelineの名前
+    Value: !GetAtt PipelineStack.Outputs.PipelineName
+
+  ArtifactBucketName:
+    Description: S3アーティファクトバケット名
+    Value: !GetAtt PipelineStack.Outputs.ArtifactBucketName

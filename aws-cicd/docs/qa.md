@@ -37,13 +37,18 @@ codedeploy_group_name = "既存のCodeDeployデプロイグループ名"
 **Step 2: CloudFormationパラメータに渡す（CloudFormation版）**
 
 ```powershell
-./deploy.sh `
-  --project-name      <project_name> `
-  --region            ap-northeast-1 `
-  --ecs-cluster       既存のECSクラスター名 `
-  --ecs-service       既存のECSサービス名 `
-  --codedeploy-app    既存のCodeDeployアプリ名 `
-  --codedeploy-group  既存のCodeDeployデプロイグループ名
+aws cloudformation deploy `
+  --template-file root.yml `
+  --stack-name <project_name>-cicd `
+  --parameter-overrides `
+    ProjectName=<project_name> `
+    SourceType=codecommit `
+    EcsClusterName=既存のECSクラスター名 `
+    EcsServiceName=既存のECSサービス名 `
+    CodeDeployAppName=既存のCodeDeployアプリ名 `
+    CodeDeployGroupName=既存のCodeDeployデプロイグループ名 `
+  --capabilities CAPABILITY_NAMED_IAM `
+  --region ap-northeast-1
 ```
 
 **Step 3: デプロイして動作確認**
@@ -120,6 +125,17 @@ aws cloudformation describe-stacks `
 
 ---
 
+## Q3. Deploy Stageだけ失敗する場合の確認ポイント
+
+| 確認項目 | 確認方法 |
+|---|---|
+| CodeDeploy Deployment Groupが存在するか | `aws deploy get-deployment-group --application-name <app> --deployment-group-name <group>` |
+| ECSサービスのデプロイコントローラーが `CODE_DEPLOY` か | Q2のStep 2参照 |
+| ALBにBlue/Green用Target Groupが2つあるか | AWSコンソール → EC2 → ターゲットグループ |
+| IAMロールにCodeDeploy実行権限があるか | AWSコンソール → IAM → ロール |
+
+---
+
 ## Q4. CodeStar Connections とは何か？
 
 AWS CodePipeline と GitHub（または Bitbucket / GitLab）を接続するための **認証機構サービス**です。
@@ -152,11 +168,78 @@ CodePipeline は AWS 内のサービスであり、そのままでは GitHub の
 
 ---
 
-## Q3. Deploy Stageだけ失敗する場合の確認ポイント
+## Q6. buildspec.yml で ECR ログインが必要な理由は？
 
-| 確認項目 | 確認方法 |
+ECR はプライベートな Docker レジストリのため、`docker push` の前に認証が必要です。
+
+```bash
+aws ecr get-login-password --region ap-northeast-1 \
+  | docker login --username AWS --password-stdin <ECR_URI>
+```
+
+| ステップ | 処理 |
 |---|---|
-| CodeDeploy Deployment Groupが存在するか | `aws deploy get-deployment-group --application-name <app> --deployment-group-name <group>` |
-| ECSサービスのデプロイコントローラーが `CODE_DEPLOY` か | Q2のStep 2参照 |
-| ALBにBlue/Green用Target Groupが2つあるか | AWSコンソール → EC2 → ターゲットグループ |
-| IAMロールにCodeDeploy実行権限があるか | AWSコンソール → IAM → ロール |
+| `aws ecr get-login-password` | CodeBuild の IAM ロール権限で一時トークンを取得（有効期限12時間） |
+| `docker login` | そのトークンを使って Docker デーモンを ECR に認証 |
+| `docker push` | 認証済み状態で ECR にイメージを送信 |
+
+ログインを省くと `no basic auth credentials` エラーで `docker push` が失敗します。
+
+---
+
+## Q7. appspec.yaml と taskdef.json が必要な理由は？
+
+CodeDeploy の ECS Blue/Green デプロイに必要な3ファイルのうち、2つはアプリ側で用意する必要があります。
+
+| ファイル | 作成者 | 役割 |
+|---|---|---|
+| `imageDetail.json` | buildspec.yml が自動生成 | ECR にプッシュしたイメージの URI を記録 |
+| `taskdef.json` | アプリ開発者が用意 | ECS タスク定義のテンプレート（CPU・メモリ・ポート等） |
+| `appspec.yaml` | アプリ開発者が用意 | どの ECS サービスにデプロイするかを CodeDeploy に伝える |
+
+**動作の流れ:**
+
+```
+imageDetail.json の ImageURI
+        ↓
+taskdef.json の <IMAGE1_NAME> を実際の URI に置換
+        ↓
+新しい ECS タスク定義を登録
+        ↓
+appspec.yaml に従って ECS サービスを Blue/Green で切り替え
+```
+
+どれか1つ欠けても Deploy Stage が失敗します。各ファイルのテンプレートは [docs/buildspec_design.md](buildspec_design.md) を参照してください。
+
+---
+
+## Q8. buildspec.yml はアプリをコミットするたびに入れる必要があるか？
+
+いいえ。最初に1回だけコミットしてリポジトリに置いておくものです。
+
+```
+your-app-repo/
+├── buildspec.yml   ← 最初に1回置く。以後ほぼ変更なし
+├── appspec.yaml    ← 同上
+├── taskdef.json    ← 同上
+├── Dockerfile      ← 同上
+└── src/            ← ここを毎回コミット・push する
+```
+
+`aws-cicd/buildspec.yml` にサンプルを用意しています。アプリリポジトリ作成時にコピーして使用してください。
+
+---
+
+## Q9. terraform apply で「Map value must satisfy constraint: length >= 1」エラーが出る
+
+Deploy Stage の設定値（`codedeploy_app_name` / `codedeploy_group_name`）が空文字のまま apply したときに発生する。AWS CodePipeline は設定値に空文字を許可しない。
+
+**原因**: aws-app をデプロイする前に aws-cicd を apply した。
+
+**解決策**: `terraform.tfvars` の `codedeploy_app_name` と `codedeploy_group_name` が空文字のままでも apply できるよう、Deploy Stage は条件付きになっている（値が設定されていないときは Source + Build の2ステージで動作する）。
+
+つまり:
+- **初回 apply（aws-app デプロイ前）**: Source + Build の2ステージで作成される → エラーは出ない
+- **aws-app デプロイ後に再 apply**: Deploy Stage が追加される → 3ステージになり完成
+
+このエラーが出た場合は `terraform.tfvars` を確認し、値が正しく設定されているかを確認する。

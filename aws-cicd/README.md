@@ -91,8 +91,12 @@ Terraform版とCloudFormation版の両方を提供します。
 | 順番 | ファイル | 内容 |
 |---|---|---|
 | 1 | [docs/design.md](docs/design.md) | 設計書。スコープ・アーキテクチャ・インターフェース定義を確認する |
+| 2 | [docs/terraform_guide.md](docs/terraform_guide.md) | Terraform 実行手順。tfstate バケット作成から terraform destroy まで |
 | 2 | [docs/setup_guide.md](docs/setup_guide.md) | CodeCommit版 接続手順。ローカルとAWSの接続設定を行う |
 | 2 | [docs/setup_guide_github.md](docs/setup_guide_github.md) | GitHub版 接続手順。CodeStar Connectionsの承認手順を行う |
+| - | [docs/resource_design.md](docs/resource_design.md) | リソース詳細設計書（Terraform版）。各AWSリソースの名前・設定値・IAM権限の詳細 |
+| - | [docs/resource_design_cfn.md](docs/resource_design_cfn.md) | リソース詳細設計書（CloudFormation版）。スタック・パラメータ・論理ID・Outputs の詳細 |
+| - | [docs/buildspec_design.md](docs/buildspec_design.md) | buildspec.yml 設計書。アプリ側で用意するファイル（appspec.yaml・taskdef.json）の説明 |
 | - | [docs/qa.md](docs/qa.md) | よくある質問。既存ECS連携手順・Deploy Stageエラー対処・用語解説など |
 
 ---
@@ -103,6 +107,23 @@ Terraform版とCloudFormation版の両方を提供します。
 
 - AWS CLI v2 インストール済み・認証情報設定済み
 - Terraform >= 1.6（Terraform版を使う場合）
+- **tfstate 保存用 S3 バケットが作成済みであること**（Terraform版を使う場合・初回のみ）
+  ```powershell
+  # S3バケットを作成する
+  # --bucket                              : バケット名（グローバルで一意な名前をつける）
+  # --region                              : バケットを作成するリージョン
+  # --create-bucket-configuration         : us-east-1 以外のリージョンで作成する際に必須
+  aws s3api create-bucket `
+    --bucket <your-tfstate-bucket-name> `
+    --region ap-northeast-1 `
+    --create-bucket-configuration LocationConstraint=ap-northeast-1
+
+  # バージョニングを有効化する（tfstateの変更履歴を残すため推奨）
+  # Status=Enabled : バージョニングをオンにする
+  aws s3api put-bucket-versioning `
+    --bucket <your-tfstate-bucket-name> `
+    --versioning-configuration Status=Enabled
+  ```
 - Deploy Stageを動作させる場合は `aws-app` のデプロイ済み、または既存ECS / CodeDeploy が設定済みであること
 
 ### Step 1: 設計書を読む
@@ -118,7 +139,8 @@ cd terraform
 cp terraform.tfvars.example terraform.tfvars
 # terraform.tfvars を環境に合わせて編集
 
-terraform init
+# terraform init には -backend-config フラグが必要（詳細は docs/terraform_guide.md 参照）
+terraform init -backend-config="bucket=<YOUR_TFSTATE_BUCKET>" -backend-config="key=aws-cicd/terraform.tfstate" -backend-config="region=ap-northeast-1"
 terraform plan
 terraform apply
 ```
@@ -127,8 +149,23 @@ terraform apply
 
 ```powershell
 cd cloudformation
-./deploy.sh --project-name <project_name> --region ap-northeast-1
+# Step 1: 子スタックテンプレートをS3にアップロードし、参照先URLを変換する
+aws cloudformation package `
+  --template-file root.yml `
+  --s3-bucket <cfn-template-bucket> `
+  --output-template-file root-packaged.yml `
+  --region ap-northeast-1
+
+# Step 2: パッケージ済みテンプレートをデプロイする
+aws cloudformation deploy `
+  --template-file root-packaged.yml `
+  --stack-name <project_name>-cicd `
+  --parameter-overrides ProjectName=<project_name> SourceType=codecommit `
+  --capabilities CAPABILITY_NAMED_IAM `
+  --region ap-northeast-1
 ```
+
+> `<cfn-template-bucket>` は任意のS3バケット（CloudFormationテンプレートのアップロード用）。tfstateバケットと同じバケットを使いまわすことも可能。
 
 ### Step 3: ソースリポジトリと接続してコードを push する
 
@@ -150,23 +187,28 @@ aws-cicd/
 ├── buildspec.yml                  # CodeBuildビルド定義（アプリリポジトリのルートに配置して使用）
 ├── docs/
 │   ├── design.md                  # 設計書（スコープ・インターフェース定義）
+│   ├── terraform_guide.md         # Terraform 実行手順
+│   ├── resource_design.md         # リソース詳細設計書（Terraform版）
+│   ├── resource_design_cfn.md     # リソース詳細設計書（CloudFormation版）
+│   ├── buildspec_design.md        # buildspec.yml 設計書
 │   ├── setup_guide.md             # CodeCommit版 接続セットアップ手順
 │   ├── setup_guide_github.md      # GitHub版 接続セットアップ手順
 │   └── qa.md                      # よくある質問（既存ECS連携手順・用語解説など）
-├── terraform/                     # Terraform 版 IaC（作成中）
+├── terraform/                     # Terraform 版 IaC
 │   └── modules/
 │       ├── ecr/                   # ECR リポジトリ（共通）
-│       ├── source-codecommit/     # CodeCommit + EventBridge（CodeCommit版）
+│       ├── source-codecommit/     # CodeCommit（CodeCommit版）
 │       ├── source-github/         # CodeStar Connections（GitHub版）
 │       ├── iam/                   # 各サービス用IAMロール・ポリシー（共通）
-│       └── pipeline/              # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
-└── cloudformation/                # CloudFormation 版 IaC（作成中）
+│       └── pipeline/              # CodePipeline + CodeBuild + S3 + CloudWatch Logs + EventBridge（共通）
+└── cloudformation/                # CloudFormation 版 IaC
+    ├── root.yml                   # ネストスタック頂点（全スタックを1コマンドでデプロイ）
     └── stacks/
         ├── 01-ecr.yaml                # ECR リポジトリ（共通）
         ├── 02-source-codecommit.yaml  # CodeCommit版 ← どちらか一方を選択
         ├── 02-source-github.yaml      # GitHub版    ←
         ├── 03-iam.yaml                # 各サービス用IAMロール・ポリシー（共通）
-        └── 04-pipeline.yaml           # CodePipeline + CodeBuild + CodeDeploy + S3 + CloudWatch Logs（共通）
+        └── 04-pipeline.yaml           # CodePipeline + CodeBuild + S3 + CloudWatch Logs（共通）+ EventBridge（CodeCommit版のみ）
 ```
 
 ---

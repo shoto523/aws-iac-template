@@ -1,0 +1,34 @@
+version: 0.2
+
+# このファイルをアプリリポジトリのルートに配置して使用する
+# CodeBuild 環境変数（CodePipeline から自動注入）:
+#   ECR_REPOSITORY_URI : ECRリポジトリのURI
+#   AWS_DEFAULT_REGION : リージョン
+#   CONTAINER_NAME     : コンテナ名（taskdef.json の IMAGE1_NAME プレースホルダに対応）
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-8)
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - docker build -t $ECR_REPOSITORY_URI:$IMAGE_TAG .
+      - docker tag $ECR_REPOSITORY_URI:$IMAGE_TAG $ECR_REPOSITORY_URI:latest
+
+  post_build:
+    commands:
+      - echo Pushing the Docker image...
+      - docker push $ECR_REPOSITORY_URI:$IMAGE_TAG
+      - docker push $ECR_REPOSITORY_URI:latest
+      - echo Writing imageDetail.json...
+      - printf '{"ImageURI":"%s:%s"}' $ECR_REPOSITORY_URI $IMAGE_TAG > imageDetail.json
+
+artifacts:
+  files:
+    - imageDetail.json
+    - appspec.yaml
+    - taskdef.json

@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "aws-app: Application Infrastructure Root Stack (ネストスタック頂点)"
+
+# 使い方:
+#   aws cloudformation package \
+#     --template-file root.yml \
+#     --s3-bucket <cfn-template-bucket> \
+#     --output-template-file root-packaged.yml \
+#     --region ap-northeast-1
+#
+#   aws cloudformation deploy \
+#     --template-file root-packaged.yml \
+#     --stack-name <project_name>-app \
+#     --parameter-overrides ProjectName=<project_name> VpcId=<vpc_id> ... \
+#     --capabilities CAPABILITY_NAMED_IAM \
+#     --region ap-northeast-1
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: リソース名のプレフィックス（全リソース名の先頭に付く）
+
+  VpcId:
+    Type: String
+    Description: ECS・ALBを配置するVPC ID
+
+  PublicSubnetIds:
+    Type: CommaDelimitedList
+    Description: ALBを配置するパブリックサブネットID（カンマ区切り）
+
+  AlbSecurityGroupId:
+    Type: String
+    Description: ALB用セキュリティグループID
+
+  EcsSecurityGroupId:
+    Type: String
+    Description: ECSタスク用セキュリティグループID
+
+  ContainerName:
+    Type: String
+    Description: タスク定義のコンテナ名
+
+  ContainerPort:
+    Type: Number
+    Default: 80
+    Description: コンテナが使用するポート番号
+
+  EcrRepositoryUrl:
+    Type: String
+    Description: ECRリポジトリのURI（aws-cicdの出力値 ecr_repository_url）
+
+Resources:
+  IamStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stacks/01-iam.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+
+  AlbStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stacks/02-alb.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+        VpcId: !Ref VpcId
+        PublicSubnetIds: !Join [",", !Ref PublicSubnetIds]
+        AlbSecurityGroupId: !Ref AlbSecurityGroupId
+        ContainerPort: !Ref ContainerPort
+
+  EcsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stacks/03-ecs.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+        PublicSubnetIds: !Join [",", !Ref PublicSubnetIds]
+        EcsSecurityGroupId: !Ref EcsSecurityGroupId
+        ContainerName: !Ref ContainerName
+        ContainerPort: !Ref ContainerPort
+        EcrRepositoryUrl: !Ref EcrRepositoryUrl
+        EcsTaskExecutionRoleArn: !GetAtt IamStack.Outputs.EcsTaskExecutionRoleArn
+        EcsTaskRoleArn: !GetAtt IamStack.Outputs.EcsTaskRoleArn
+        TargetGroupBlueArn: !GetAtt AlbStack.Outputs.TargetGroupBlueArn
+
+  CodeDeployStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stacks/04-codedeploy.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+        CodeDeployRoleArn: !GetAtt IamStack.Outputs.CodeDeployRoleArn
+        EcsClusterName: !GetAtt EcsStack.Outputs.EcsClusterName
+        EcsServiceName: !GetAtt EcsStack.Outputs.EcsServiceName
+        TargetGroupBlueName: !GetAtt AlbStack.Outputs.TargetGroupBlueName
+        TargetGroupGreenName: !GetAtt AlbStack.Outputs.TargetGroupGreenName
+        ListenerProdArn: !GetAtt AlbStack.Outputs.ListenerProdArn
+        ListenerTestArn: !GetAtt AlbStack.Outputs.ListenerTestArn
+
+Outputs:
+  EcsClusterName:
+    Description: ECSクラスター名（aws-cicdのパラメータに渡す）
+    Value: !GetAtt EcsStack.Outputs.EcsClusterName
+
+  EcsServiceName:
+    Description: ECSサービス名（aws-cicdのパラメータに渡す）
+    Value: !GetAtt EcsStack.Outputs.EcsServiceName
+
+  CodeDeployAppName:
+    Description: CodeDeployアプリ名（aws-cicdのパラメータに渡す）
+    Value: !GetAtt CodeDeployStack.Outputs.CodeDeployAppName
+
+  CodeDeployGroupName:
+    Description: CodeDeployデプロイグループ名（aws-cicdのパラメータに渡す）
+    Value: !GetAtt CodeDeployStack.Outputs.CodeDeployGroupName
+
+  AlbDnsName:
+    Description: ALBのDNS名（アプリへのアクセスURL）
+    Value: !GetAtt AlbStack.Outputs.AlbDnsName

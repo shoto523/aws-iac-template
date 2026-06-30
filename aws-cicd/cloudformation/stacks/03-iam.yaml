@@ -1,0 +1,214 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "aws-cicd: IAM Roles"
+
+Parameters:
+  ProjectName:
+    Type: String
+  SourceType:
+    Type: String
+    AllowedValues: [codecommit, github]
+  EcrRepositoryArn:
+    Type: String
+  CodeCommitRepositoryArn:
+    Type: String
+    Default: ""
+  ConnectionArn:
+    Type: String
+    Default: ""
+
+Conditions:
+  IsCodeCommit: !Equals [!Ref SourceType, codecommit]
+  IsGitHub: !Equals [!Ref SourceType, github]
+
+Resources:
+  # ----------------------------------------
+  # CodePipeline 実行ロール
+  # ----------------------------------------
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-codepipeline-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3ArtifactPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                  - s3:GetBucketVersioning
+                  - s3:ListBucket
+                # S3バケット作成前にIAMを定義するためワイルドカードで解決（循環依存回避）
+                Resource:
+                  - !Sub "arn:aws:s3:::${ProjectName}-pipeline-artifacts-*"
+                  - !Sub "arn:aws:s3:::${ProjectName}-pipeline-artifacts-*/*"
+        - PolicyName: CodeBuildPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${ProjectName}-build"
+        - PolicyName: CodeDeployPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codedeploy:CreateDeployment
+                  - codedeploy:GetDeployment
+                  - codedeploy:GetApplication
+                  - codedeploy:GetApplicationRevision
+                  - codedeploy:RegisterApplicationRevision
+                  - codedeploy:GetDeploymentConfig
+                  - ecs:RegisterTaskDefinition
+                Resource: "*"
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource: "*"
+                Condition:
+                  StringEqualsIfExists:
+                    iam:PassedToService: ecs-tasks.amazonaws.com
+        - !If
+          - IsCodeCommit
+          - PolicyName: CodeCommitPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - codecommit:GetBranch
+                    - codecommit:GetCommit
+                    - codecommit:GetRepository
+                    - codecommit:GetUploadArchiveStatus
+                    - codecommit:UploadArchive
+                  Resource: !Ref CodeCommitRepositoryArn
+          - !Ref AWS::NoValue
+        - !If
+          - IsGitHub
+          - PolicyName: CodeStarPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: codestar-connections:UseConnection
+                  Resource: !Ref ConnectionArn
+          - !Ref AWS::NoValue
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # CodeBuild 実行ロール
+  # ----------------------------------------
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-codebuild-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EcrAuthPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+        - PolicyName: EcrImagePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                Resource: !Ref EcrRepositoryArn
+        - PolicyName: S3ArtifactPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${ProjectName}-pipeline-artifacts-*/*"
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/codebuild/${ProjectName}*"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # EventBridge 実行ロール（CodeCommit版のみ）
+  # ----------------------------------------
+  EventBridgeRole:
+    Type: AWS::IAM::Role
+    Condition: IsCodeCommit
+    Properties:
+      RoleName: !Sub "${ProjectName}-eventbridge-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StartPipelinePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: codepipeline:StartPipelineExecution
+                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${ProjectName}-pipeline"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  CodePipelineRoleArn:
+    Value: !GetAtt CodePipelineRole.Arn
+    Export:
+      Name: !Sub "${ProjectName}-codepipeline-role-arn"
+
+  CodeBuildRoleArn:
+    Value: !GetAtt CodeBuildRole.Arn
+    Export:
+      Name: !Sub "${ProjectName}-codebuild-role-arn"
+
+  EventBridgeRoleArn:
+    Condition: IsCodeCommit
+    Value: !GetAtt EventBridgeRole.Arn
+    Export:
+      Name: !Sub "${ProjectName}-eventbridge-role-arn"
