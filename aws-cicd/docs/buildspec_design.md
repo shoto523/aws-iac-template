@@ -92,7 +92,17 @@ Resources:
 
 ### taskdef.json
 
-ECS タスク定義のテンプレートです。`<IMAGE1_NAME>` は CodeDeploy が自動で実際のイメージ URI に置換します。
+本リポジトリの `aws-cicd/taskdef.json` をアプリリポジトリのルートにコピーし、以下のプレースホルダーを書き換えてください。
+
+| プレースホルダー | 書き換え内容 | 確認場所 |
+|---|---|---|
+| `<PROJECT_NAME>` | `project_name` の値（例: `my-app`） | `aws-app/terraform.tfvars` |
+| `<ACCOUNT_ID>` | AWS アカウント ID（12桁の数字） | AWS コンソール右上 / `aws sts get-caller-identity` |
+| `<REGION>` | デプロイ先リージョン（例: `ap-northeast-1`） | `aws-app/terraform.tfvars` の `aws_region` |
+| `<IMAGE1_NAME>` | **変更不要**（CodeDeploy が自動で実際のイメージ URI に置換する） | — |
+
+> `executionRoleArn` のロール名は `aws-app` の IAM モジュールが `<PROJECT_NAME>-ecs-task-execution-role` という名前で作成します。  
+> `aws-app` を `terraform apply` した後に `terraform output` で ARN を確認することもできます。
 
 **コンテナ環境変数（`DATABASE_URL` 等のアプリ固有の設定値）はここに記載します。**  
 IaC（Terraform / CloudFormation）は管理しないため、アプリ開発者がここで直接設定してください。
@@ -104,7 +114,7 @@ IaC（Terraform / CloudFormation）は管理しないため、アプリ開発者
   "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/my-app-ecs-task-execution-role",
   "containerDefinitions": [
     {
-      "name": "<IMAGE1_NAME>",
+      "name": "my-app",
       "image": "<IMAGE1_NAME>",
       "portMappings": [
         {

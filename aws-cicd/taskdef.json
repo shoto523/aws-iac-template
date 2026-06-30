@@ -3,7 +3,7 @@
   "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/<PROJECT_NAME>-ecs-task-execution-role",
   "containerDefinitions": [
     {
-      "name": "app",
+      "name": "my-app",
       "image": "<IMAGE1_NAME>",
       "portMappings": [{ "containerPort": 80, "protocol": "tcp" }],
       "essential": true,
