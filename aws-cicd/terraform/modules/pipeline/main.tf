@@ -45,6 +45,11 @@ resource "aws_codebuild_project" "main" {
       name  = "CONTAINER_NAME"
       value = var.project_name
     }
+
+    environment_variable {
+      name  = "TASK_EXECUTION_ROLE_ARN"
+      value = var.task_execution_role_arn
+    }
   }
 
   logs_config {

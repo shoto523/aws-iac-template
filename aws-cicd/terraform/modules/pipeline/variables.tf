@@ -103,3 +103,9 @@ variable "codedeploy_group_name" {
   type    = string
   default = ""
 }
+
+variable "task_execution_role_arn" {
+  type        = string
+  description = "ECS Task Execution ロールのARN（buildspec.yml の taskdef.json 生成に使用）"
+  default     = ""
+}

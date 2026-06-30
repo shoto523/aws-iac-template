@@ -22,3 +22,8 @@ output "alb_dns_name" {
   description = "ALBのDNS名（アプリへのアクセスURL）"
   value       = module.alb.alb_dns_name
 }
+
+output "task_execution_role_arn" {
+  description = "ECS Task Execution ロールのARN（aws-cicdのパラメータに渡す）"
+  value       = module.iam.task_execution_role_arn
+}

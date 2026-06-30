@@ -86,8 +86,9 @@ module "pipeline" {
   codebuild_role_arn    = module.iam.codebuild_role_arn
   eventbridge_role_arn  = module.iam.eventbridge_role_arn
 
-  ecs_cluster_name      = var.ecs_cluster_name
-  ecs_service_name      = var.ecs_service_name
-  codedeploy_app_name   = var.codedeploy_app_name
-  codedeploy_group_name = var.codedeploy_group_name
+  ecs_cluster_name        = var.ecs_cluster_name
+  ecs_service_name        = var.ecs_service_name
+  codedeploy_app_name     = var.codedeploy_app_name
+  codedeploy_group_name   = var.codedeploy_group_name
+  task_execution_role_arn = var.task_execution_role_arn
 }

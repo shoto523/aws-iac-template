@@ -2,9 +2,11 @@ version: 0.2
 
 # このファイルをアプリリポジトリのルートに配置して使用する
 # CodeBuild 環境変数（CodePipeline から自動注入）:
-#   ECR_REPOSITORY_URI : ECRリポジトリのURI
-#   AWS_DEFAULT_REGION : リージョン
-#   CONTAINER_NAME     : コンテナ名（taskdef.json の IMAGE1_NAME プレースホルダに対応）
+#   ECR_REPOSITORY_URI      : ECRリポジトリのURI
+#   AWS_DEFAULT_REGION      : リージョン
+#   CONTAINER_NAME          : コンテナ名・プロジェクト名（taskdef.json の family / name に使用）
+#   TASK_EXECUTION_ROLE_ARN : ECS Task Execution ロールのARN（taskdef.json の executionRoleArn に使用）
+#   CODEBUILD_RESOLVED_SOURCE_VERSION : ソースコードのコミットハッシュ（イメージタグに使用）
 
 phases:
   pre_build:
@@ -26,6 +28,34 @@ phases:
       - docker push $ECR_REPOSITORY_URI:latest
       - echo Writing imageDetail.json...
       - printf '{"ImageURI":"%s:%s"}' $ECR_REPOSITORY_URI $IMAGE_TAG > imageDetail.json
+      - echo Writing taskdef.json...
+      - |
+        cat > taskdef.json << EOF
+        {
+          "family": "${CONTAINER_NAME}",
+          "executionRoleArn": "${TASK_EXECUTION_ROLE_ARN}",
+          "containerDefinitions": [
+            {
+              "name": "${CONTAINER_NAME}",
+              "image": "<IMAGE1_NAME>",
+              "portMappings": [{"containerPort": 80, "protocol": "tcp"}],
+              "essential": true,
+              "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                  "awslogs-group": "/ecs/${CONTAINER_NAME}",
+                  "awslogs-region": "${AWS_DEFAULT_REGION}",
+                  "awslogs-stream-prefix": "ecs"
+                }
+              }
+            }
+          ],
+          "requiresCompatibilities": ["FARGATE"],
+          "networkMode": "awsvpc",
+          "cpu": "256",
+          "memory": "512"
+        }
+        EOF
 
 artifacts:
   files:

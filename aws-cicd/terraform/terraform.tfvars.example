@@ -17,7 +17,8 @@ codecommit_branch = "main"
 # github_branch = "main"
 
 # ---- aws-app デプロイ後に設定（新規ECS構築時は後から更新） ----
-ecs_cluster_name      = ""
-ecs_service_name      = ""
-codedeploy_app_name   = ""
-codedeploy_group_name = ""
+ecs_cluster_name        = ""
+ecs_service_name        = ""
+codedeploy_app_name     = ""
+codedeploy_group_name   = ""
+task_execution_role_arn = ""  # aws-app の出力値（terraform output task_execution_role_arn）

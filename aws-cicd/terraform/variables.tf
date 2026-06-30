@@ -45,6 +45,12 @@ variable "github_branch" {
 }
 
 # アプリ参照値（aws-app の出力値）
+variable "task_execution_role_arn" {
+  type        = string
+  description = "ECS Task Execution ロールのARN（aws-appの出力値）"
+  default     = ""
+}
+
 variable "ecs_cluster_name" {
   type        = string
   description = "デプロイ先ECSクラスター名（aws-appの出力値）"
