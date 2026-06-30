@@ -194,14 +194,14 @@ aws-cicd/
 │   ├── setup_guide.md             # CodeCommit版 接続セットアップ手順
 │   ├── setup_guide_github.md      # GitHub版 接続セットアップ手順
 │   └── qa.md                      # よくある質問（既存ECS連携手順・用語解説など）
-├── terraform/                     # Terraform 版 IaC（作成中）
+├── terraform/                     # Terraform 版 IaC
 │   └── modules/
 │       ├── ecr/                   # ECR リポジトリ（共通）
 │       ├── source-codecommit/     # CodeCommit（CodeCommit版）
 │       ├── source-github/         # CodeStar Connections（GitHub版）
 │       ├── iam/                   # 各サービス用IAMロール・ポリシー（共通）
 │       └── pipeline/              # CodePipeline + CodeBuild + S3 + CloudWatch Logs + EventBridge（共通）
-└── cloudformation/                # CloudFormation 版 IaC（作成中）
+└── cloudformation/                # CloudFormation 版 IaC
     ├── root.yml                   # ネストスタック頂点（全スタックを1コマンドでデプロイ）
     └── stacks/
         ├── 01-ecr.yaml                # ECR リポジトリ（共通）
