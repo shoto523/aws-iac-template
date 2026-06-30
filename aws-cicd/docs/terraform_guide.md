@@ -296,8 +296,7 @@ terraform apply
 1. aws-cicd を terraform apply（初回）               ← ローカル操作
       ↓ ecr_repository_url を取得
 2. ソースリポジトリを接続                            ← ローカル / AWSコンソール（ソース種別による）
-3. アプリリポジトリに buildspec.yml / appspec.yaml / taskdef.json を配置
-      ↓ taskdef.json のプレースホルダーを書き換え
+3. アプリリポジトリに buildspec.yml / appspec.yaml を配置（編集不要）
 4. aws-app を terraform apply                        ← ローカル操作
       ↓ ecs_cluster_name 等を取得
 5. aws-cicd を terraform apply（再実行）             ← ローカル操作

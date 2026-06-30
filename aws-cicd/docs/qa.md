@@ -189,12 +189,13 @@ aws ecr get-login-password --region ap-northeast-1 \
 
 ## Q7. appspec.yaml と taskdef.json が必要な理由は？
 
-CodeDeploy の ECS Blue/Green デプロイに必要な3ファイルのうち、2つはアプリ側で用意する必要があります。
+CodeDeploy の ECS Blue/Green デプロイには以下の3ファイルが必要です。  
+`taskdef.json` は `buildspec.yml` が自動生成するため、アプリ開発者が用意するのは `appspec.yaml` のみです。
 
 | ファイル | 作成者 | 役割 |
 |---|---|---|
 | `imageDetail.json` | buildspec.yml が自動生成 | ECR にプッシュしたイメージの URI を記録 |
-| `taskdef.json` | アプリ開発者が用意 | ECS タスク定義のテンプレート（CPU・メモリ・ポート等） |
+| `taskdef.json` | buildspec.yml が自動生成 | ECS タスク定義のテンプレート（`TASK_EXECUTION_ROLE_ARN` 等は Terraform から注入） |
 | `appspec.yaml` | アプリ開発者が用意 | どの ECS サービスにデプロイするかを CodeDeploy に伝える |
 
 **動作の流れ:**
@@ -221,12 +222,13 @@ appspec.yaml に従って ECS サービスを Blue/Green で切り替え
 your-app-repo/
 ├── buildspec.yml   ← 最初に1回置く。以後ほぼ変更なし
 ├── appspec.yaml    ← 同上
-├── taskdef.json    ← 同上
 ├── Dockerfile      ← 同上
 └── src/            ← ここを毎回コミット・push する
 ```
 
-`aws-cicd/buildspec.yml` にサンプルを用意しています。アプリリポジトリ作成時にコピーして使用してください。
+> `taskdef.json` はビルド時に `buildspec.yml` が自動生成するため、アプリリポジトリに置く必要はありません。
+
+`aws-cicd/buildspec.yml` と `aws-cicd/appspec.yaml` にサンプルを用意しています。アプリリポジトリ作成時にコピーして使用してください。
 
 ---
 
