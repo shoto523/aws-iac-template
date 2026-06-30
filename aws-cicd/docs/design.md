@@ -133,6 +133,56 @@ CodeCommit版との差分のみ記載する。
 
 ---
 
+### パイプライン起動の仕組み（CodeCommit版）
+
+CodeCommitへのpushがBuild Stageに到達するまでの詳細な流れを示す。
+
+```
+① git push（ローカルPC）
+        ↓
+② CodeCommit（ソースコードを受け取る）
+        ↓ pushイベントを発火
+③ EventBridge（イベントルール）
+        └─ 「CodeCommitの特定ブランチにpushが来たら
+              CodePipelineのStartPipelineExecutionを呼ぶ」
+              というルールを保持している
+        ↓ StartPipelineExecution を呼ぶ
+④ CodePipeline が起動
+        │
+        ├─ Source Stage
+        │      CodeCommitからソース一式を取得
+        │      → S3アーティファクトバケットに保存
+        │      （ステージ間のファイル受け渡し用）
+        │
+        └─ Build Stage
+               S3からソースを取得
+               → CodeBuild が起動し buildspec.yml を実行
+                    pre_build  : ECRへdocker login
+                    build      : docker build / docker tag
+                    post_build : docker push → imageDetail.json生成
+                    artifacts  : imageDetail.json / appspec.yaml / taskdef.json をS3へ
+```
+
+**ポイント：CodePipelineはCodeCommitのpushを直接検知しない**
+
+```
+❌ CodeCommit ──────────────→ CodePipeline（直接は繋がっていない）
+✅ CodeCommit → EventBridge → CodePipeline（EventBridgeが仲介する）
+```
+
+EventBridgeが橋渡し役を担うため、`02-source-codecommit.yaml`（CloudFormation）または `source-codecommit` モジュール（Terraform）でEventBridgeルールを作成している。
+
+| リソース | 役割 |
+|---|---|
+| CodeCommit | ソースコードを保管するGitリポジトリ |
+| EventBridge | pushイベントを検知してCodePipelineを起動する橋渡し役 |
+| CodePipeline | ステージを順番に実行するオーケストレーター |
+| S3 | ステージ間でファイルを受け渡す一時保管場所 |
+| CodeBuild | buildspec.ymlに従ってDockerイメージをビルドする実行環境 |
+| ECR | ビルドされたDockerイメージの保管場所 |
+
+---
+
 ## 6. インターフェース定義
 
 本セクションのパラメータはTerraform版・CloudFormation版で共通。渡し方のみ異なる。
