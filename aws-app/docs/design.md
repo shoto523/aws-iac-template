@@ -31,7 +31,7 @@ CI/CDパイプラインは別リポジトリ（`aws-cicd`）で管理し、本�
 | Target Group（Blue/Green） | Blue/Greenデプロイ用ターゲットグループ（2つ） |
 | ALB Listener | 本番(80番)・テスト(8080番)のリスナー |
 | CodeDeploy Application | デプロイアプリケーション定義 |
-| CodeDeploy Deployment Group | ECS Blue/Greenデプロイグループ（ALB・ECS参照） |
+| CodeDeploy Deployment Group | ECS Blue/Greenデプロイグループ（ALB・ECS参照）。デプロイ失敗時の自動ロールバック有効 |
 | IAM Roles | ECS Task Execution Role / ECS Task Role / CodeDeploy Role |
 
 ### 対象外（OUT OF SCOPE）
@@ -295,3 +295,4 @@ aws-app/
 | ALBを本リポジトリに含める | ECSへの入口かつBlue/Greenの切替装置であり、ECSと一体で管理すべき |
 | CodeDeploy Application + Deployment GroupをAWS-APP側に含める | ECS・ALBリソースへの参照が必要なため、アプリ基盤と一体で管理すべき |
 | CloudFormationはスタックを4本に分割 | IAM → ALB → ECS → CodeDeploy の順に依存関係があるため分割 |
+| デプロイ失敗時は自動ロールバックする | Blue/Green デプロイの目的（安全なデプロイ）を担保するため。`DEPLOYMENT_FAILURE` 発生時に旧環境（Blue）へ自動で切り戻す |

@@ -45,6 +45,11 @@ Resources:
       DeploymentStyle:
         DeploymentType: BLUE_GREEN
         DeploymentOption: WITH_TRAFFIC_CONTROL
+      # デプロイ失敗時にBlue（旧環境）へ自動で切り戻す
+      AutoRollbackConfiguration:
+        Enabled: true
+        Events:
+          - DEPLOYMENT_FAILURE
       ECSServices:
         - ClusterName: !Ref EcsClusterName
           ServiceName: !Ref EcsServiceName

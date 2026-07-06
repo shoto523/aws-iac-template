@@ -227,6 +227,7 @@ CloudFormation の実装コードから起こしたリソース仕様。
 | | | DeploymentConfigName | `CodeDeployDefault.ECSAllAtOnce` |
 | | | DeploymentStyle.DeploymentType | `BLUE_GREEN` |
 | | | DeploymentStyle.DeploymentOption | `WITH_TRAFFIC_CONTROL` |
+| | | AutoRollbackConfiguration | Enabled: `true`, Events: `DEPLOYMENT_FAILURE`（デプロイ失敗時に Blue へ自動ロールバック） |
 | | | EcsServices.ClusterName | `${ProjectName}-cluster` |
 | | | EcsServices.ServiceName | `${ProjectName}-service` |
 | | | LoadBalancerInfo.TargetGroupPairInfoList | Blue/Green ターゲットグループ + 本番/テストリスナー |

@@ -22,6 +22,12 @@ resource "aws_codedeploy_deployment_group" "main" {
     deployment_option = "WITH_TRAFFIC_CONTROL"
   }
 
+  # デプロイ失敗時にBlue（旧環境）へ自動で切り戻す
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
+  }
+
   ecs_service {
     cluster_name = var.ecs_cluster_name
     service_name = var.ecs_service_name

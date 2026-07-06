@@ -154,6 +154,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 | デプロイグループ名 | `${project_name}-deploy-group` |
 | デプロイタイプ | BLUE_GREEN |
 | デプロイ設定 | CodeDeployDefault.ECSAllAtOnce |
+| 自動ロールバック | 有効（デプロイ失敗時に Blue（旧環境）へ自動で切り戻す） |
 | ECSクラスター | `${project_name}-cluster` |
 | ECSサービス | `${project_name}-service` |
 | 本番リスナー | ALB :80 リスナー |
