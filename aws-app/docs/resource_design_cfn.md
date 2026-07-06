@@ -1,7 +1,6 @@
 # リソース詳細設計書 - CloudFormation版（aws-app）
 
-CloudFormation スタックは未実装のため、design.md と Terraform 版 resource_design.md を元にした設計仕様。  
-実装時にはこの仕様に従ってスタックを作成し、完了後に実コードと照合して更新する。
+CloudFormation の実装コードから起こしたリソース仕様。
 
 `${ProjectName}` は `root.yml` の `Parameters` セクションからすべての子スタックに渡される値。
 
@@ -15,8 +14,7 @@ CloudFormation スタックは未実装のため、design.md と Terraform 版 r
 |---|---|---|---|
 | `ProjectName` | String | — | リソース名プレフィックス |
 | `VpcId` | String | — | ECS・ALBを配置するVPC ID |
-| `PublicSubnetIds` | CommaDelimitedList | — | ALBを配置するパブリックサブネットID（複数） |
-| `PrivateSubnetIds` | CommaDelimitedList | — | ECSタスクを配置するプライベートサブネットID（複数） |
+| `PublicSubnetIds` | CommaDelimitedList | — | ALB・ECSタスクを配置するパブリックサブネットID（異なるAZに2つ以上） |
 | `AlbSecurityGroupId` | String | — | ALB用セキュリティグループID |
 | `EcsSecurityGroupId` | String | — | ECSタスク用セキュリティグループID |
 | `ContainerName` | String | — | タスク定義のコンテナ名 |
@@ -194,9 +192,9 @@ CloudFormation スタックは未実装のため、design.md と Terraform 版 r
 | | | LaunchType | `FARGATE` |
 | | | DeploymentController | `CODE_DEPLOY` |
 | | | DesiredCount | `1` |
-| | | Subnets | `!Ref PrivateSubnetIds` |
+| | | Subnets | `!Ref PublicSubnetIds` |
 | | | SecurityGroups | `[!Ref EcsSecurityGroupId]` |
-| | | AssignPublicIp | `DISABLED` |
+| | | AssignPublicIp | `ENABLED`（NAT Gateway を使わない構成のため） |
 | | | LoadBalancer（ターゲットグループ） | Blue ターゲットグループ |
 
 ### Outputs

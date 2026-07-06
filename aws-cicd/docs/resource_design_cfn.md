@@ -1,7 +1,6 @@
 # リソース詳細設計書 - CloudFormation版（aws-cicd）
 
-CloudFormation スタックは未実装のため、Terraform 実装と design.md を元にした設計仕様。  
-実装時にはこの仕様に従ってスタックを作成し、完了後に実コードと照合して更新する。
+CloudFormation の実装コードから起こしたリソース仕様。
 
 `${ProjectName}` は `root.yml` の `Parameters` セクションからすべての子スタックに渡される値。
 

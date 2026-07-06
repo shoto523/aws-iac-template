@@ -1,6 +1,6 @@
 # リソース詳細設計書（aws-app）
 
-Terraform 実装は作成中のため、本ファイルは設計意図に基づく仕様記載。実装完了後に実コードと照合して更新する。`${project_name}` はユーザーが `terraform.tfvars` で設定する値。
+Terraform の実装コードから起こしたリソース仕様。`${project_name}` はユーザーが `terraform.tfvars` で設定する値。
 
 ---
 
@@ -130,10 +130,11 @@ Terraform 実装は作成中のため、本ファイルは設計意図に基づ�
 | 起動タイプ | FARGATE |
 | デプロイコントローラー | CODE_DEPLOY（Blue/Green用） |
 | 希望タスク数 | 1 |
-| サブネット | `${private_subnet_ids}` |
+| サブネット | `${public_subnet_ids}`（ALBと同じパブリックサブネット） |
 | セキュリティグループ | `${ecs_security_group_id}` |
-| パブリックIP割り当て | 無効 |
+| パブリックIP割り当て | 有効（NAT Gateway を使わない構成のため） |
 | ロードバランサー | Blue ターゲットグループ |
+| ライフサイクル | `task_definition` / `load_balancer` の変更を無視（CodeDeploy が管理するため） |
 
 ---
 

@@ -39,7 +39,7 @@ CI/CDパイプラインは別リポジトリ（`aws-cicd`）で管理し、本�
 | コンポーネント | 理由 |
 |---|---|
 | VPC / Subnet / Security Group | ネットワーク設計は前提条件として別途用意する |
-| NAT Gateway | ネットワーク設計の一部 |
+| NAT Gateway | 本テンプレートでは**不要**（ECSタスクをパブリックサブネットに配置しパブリックIPを付与する構成のため） |
 | CodePipeline / CodeBuild | `aws-cicd`側で管理 |
 
 ---
@@ -218,7 +218,10 @@ ECSがコンテナ起動時に使用するロール。
 aws-app/
 ├── README.md
 ├── docs/
-│   └── design.md                  ← 本ファイル
+│   ├── design.md                  ← 本ファイル
+│   ├── terraform_guide.md         ← Terraform 実行手順
+│   ├── resource_design.md         ← リソース詳細設計書（Terraform版）
+│   └── resource_design_cfn.md     ← リソース詳細設計書（CloudFormation版）
 ├── terraform/                     ← Terraform版
 │   ├── main.tf
 │   ├── variables.tf

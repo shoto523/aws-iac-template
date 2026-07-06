@@ -80,7 +80,7 @@ CodePipelineのDeploy StageはCodeDeployを通じてECSにデプロイする。E
 | ALB / Target Group / Listener | アプリケーションのトラフィック管理。`aws-app`で管理 |
 | CodeDeploy Application + Deployment Group | ECS・ALBリソースへの参照が必要なため`aws-app`と一体で管理 |
 | VPC / Subnet / Security Group | ネットワーク設計は前提条件として別途用意する |
-| NAT Gateway | ネットワーク設計の一部 |
+| NAT Gateway | 本テンプレートでは**不要**（`aws-app` はECSタスクをパブリックサブネットに配置する構成のため） |
 
 ---
 
@@ -338,6 +338,9 @@ aws-cicd/                          ← 本ドキュメントが対象とする�
 ├── buildspec.yml                  ← CodeBuildビルド定義（アプリリポジトリのルートに配置して使用）
 ├── docs/
 │   ├── design.md                  ← 本ファイル
+│   ├── terraform_guide.md         ← Terraform 実行手順
+│   ├── resource_design.md         ← リソース詳細設計書（Terraform版）
+│   ├── resource_design_cfn.md     ← リソース詳細設計書（CloudFormation版）
 │   ├── buildspec_design.md        ← buildspec.yml 設計書（アプリ側で用意するファイル含む）
 │   ├── setup_guide.md             ← CodeCommit版 接続セットアップ手順
 │   ├── setup_guide_github.md      ← GitHub版 接続セットアップ手順
@@ -436,7 +439,7 @@ root main.tf（頂点）
 
 - AWS CLI v2 インストール済み・認証情報設定済み
 - Terraform >= 1.6（Terraform版を使う場合）
-- **tfstate 保存用 S3 バケットが作成済みであること**（Terraform版・初回のみ）。`terraform init` 実行前に AWS CLI で手動作成する。詳細は [docs/terraform_guide.md](terraform_guide.md) Step 0 を参照
+- **tfstate 保存用 S3 バケットが作成済みであること**（Terraform版・初回のみ）。`terraform init` 実行前に AWS CLI で手動作成する。詳細は [docs/terraform_guide.md](terraform_guide.md) の「1. 事前準備」を参照
 - Deploy Stageを動作させる場合、以下いずれかを満たすこと
   - 新規ECS：`aws-app` がデプロイ済みで、出力値をパラメータに設定済みであること
   - 既存ECS：ECS / ALB / CodeDeploy Application + Deployment Group が設定済みで、パラメータに設定済みであること

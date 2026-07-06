@@ -37,7 +37,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 | force_destroy | true（terraform destroy 時に中身ごと削除） |
 | タグ | `Project: ${project_name}` |
 
-> **現状の注記**: S3バケットは `modules/pipeline/main.tf` に定義されており、`module.iam` との循環依存が残っている。root `main.tf` への移動が予定されているが未実装。
+> **配置**: S3バケットは root `main.tf` に直接定義されている。`module.iam` と `module.pipeline` の循環依存を避けるため、どちらのモジュールにも属さない root で管理する。
 
 ---
 
@@ -95,7 +95,9 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 | Source（CodeCommit版） | Source | CodeCommit | — | `source_output` |
 | Source（GitHub版） | Source | CodeStarSourceConnection | — | `source_output` |
 | Build | Build | CodeBuild | `source_output` | `build_output` |
-| Deploy | Deploy | CodeDeployToECS | `build_output` | — |
+| Deploy（条件付き） | Deploy | CodeDeployToECS | `build_output` | — |
+
+> **Deploy ステージは条件付き**: `codedeploy_app_name` と `codedeploy_group_name` の両方が設定されている場合のみ作成される。未設定（空文字）の場合は Source + Build の2ステージで動作する（[詳細 → qa.md Q9](qa.md)）。
 
 #### Source ステージ詳細（CodeCommit版）
 

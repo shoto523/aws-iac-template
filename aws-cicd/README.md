@@ -51,7 +51,7 @@ Terraform版とCloudFormation版の両方を提供します。
 |---|---|---|
 | **向いている人** | Terraformを既に使っている・マルチクラウド対応を見越している | AWSのみ・AWS管理コンソールで完結させたい |
 | **状態管理** | tfstate ファイル（S3バックエンド推奨） | AWS が自動管理 |
-| **デプロイ方法** | `terraform apply` | `deploy.sh` スクリプト |
+| **デプロイ方法** | `terraform apply` | `aws cloudformation package` + `deploy` |
 | **必要ツール** | Terraform >= 1.6、AWS CLI v2 | AWS CLI v2 のみ |
 
 ---

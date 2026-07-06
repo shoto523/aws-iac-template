@@ -118,7 +118,6 @@ aws cloudformation deploy `
     ProjectName=<project_name> `
     VpcId=<vpc_id> `
     PublicSubnetIds=<subnet_a>,<subnet_b> `
-    PrivateSubnetIds=<subnet_c>,<subnet_d> `
     AlbSecurityGroupId=<alb_sg_id> `
     EcsSecurityGroupId=<ecs_sg_id> `
     ContainerName=<container_name> `
@@ -152,13 +151,13 @@ aws-app/
 │   ├── terraform_guide.md         # Terraform 実行手順
 │   ├── resource_design.md         # リソース詳細設計書（Terraform版）
 │   └── resource_design_cfn.md     # リソース詳細設計書（CloudFormation版）
-├── terraform/                     # Terraform 版 IaC（作成中）
+├── terraform/                     # Terraform 版 IaC
 │   └── modules/
 │       ├── iam/                   # ECS Task Execution / Task / CodeDeploy ロール
 │       ├── alb/                   # ALB + Target Group（Blue/Green）+ Listener
 │       ├── ecs/                   # ECS Cluster + Service + Task Definition
 │       └── codedeploy/            # CodeDeploy Deployment Group
-└── cloudformation/                # CloudFormation 版 IaC（作成中）
+└── cloudformation/                # CloudFormation 版 IaC
     ├── root.yml                   # ネストスタック頂点（全スタックを1コマンドでデプロイ）
     └── stacks/
         ├── 01-iam.yaml            # ECS / CodeDeploy 用IAMロール
@@ -193,7 +192,7 @@ aws-app/
 | Target Group（Blue/Green） | 02-alb | Blue/Green デプロイ用ターゲットグループ（2つ） |
 | ALB Listener（:80 / :8080） | 02-alb | 本番・テストリスナー |
 | ECS Cluster | 03-ecs | コンテナの実行基盤 |
-| ECS Service | 03-ecs | アプリコンテナを常時稼働させるサービス（プライベートサブネット配置） |
+| ECS Service | 03-ecs | アプリコンテナを常時稼働させるサービス（パブリックサブネット配置・パブリックIP付与） |
 | ECS Task Definition | 03-ecs | コンテナの定義（イメージ URI・CPU・メモリ） |
 | CodeDeploy Deployment Group | 04-codedeploy | ECS Blue/Green デプロイグループ |
 
