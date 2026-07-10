@@ -8,7 +8,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### ECS Task Execution ロール
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | ロール名 | `${project_name}-ecs-task-execution-role` |
 | 信頼するサービス | `ecs-tasks.amazonaws.com` |
@@ -23,7 +23,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### ECS Task ロール
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | ロール名 | `${project_name}-ecs-task-role` |
 | 信頼するサービス | `ecs-tasks.amazonaws.com` |
@@ -31,7 +31,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### CodeDeploy 実行ロール
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | ロール名 | `${project_name}-codedeploy-role` |
 | 信頼するサービス | `codedeploy.amazonaws.com` |
@@ -51,7 +51,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### aws_lb
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | ALB名 | `${project_name}-alb` |
 | タイプ | application |
@@ -61,7 +61,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### aws_lb_target_group（Blue）
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | ターゲットグループ名 | `${project_name}-tg-blue` |
 | ターゲットタイプ | ip（Fargate使用のため） |
@@ -71,7 +71,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### aws_lb_target_group（Green）
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | ターゲットグループ名 | `${project_name}-tg-green` |
 | ターゲットタイプ | ip |
@@ -81,7 +81,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### aws_lb_listener（本番 :80）
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | ポート | 80 |
 | プロトコル | HTTP |
@@ -89,7 +89,7 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### aws_lb_listener（テスト :8080）
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | ポート | 8080 |
 | プロトコル | HTTP |
@@ -101,13 +101,13 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### aws_ecs_cluster
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | クラスター名 | `${project_name}-cluster` |
 
 ### aws_ecs_task_definition
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | ファミリー名 | `${project_name}` |
 | ネットワークモード | awsvpc |
@@ -123,13 +123,13 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ### aws_ecs_service
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | サービス名 | `${project_name}-service` |
 | クラスター | `${project_name}-cluster` |
 | 起動タイプ | FARGATE |
 | デプロイコントローラー | CODE_DEPLOY（Blue/Green用） |
-| 希望タスク数 | 1 |
+| 希望タスク数 | 1（オートスケーリングにより実行時は変動する。[詳細 → Application Auto Scaling](#application-auto-scaling)） |
 | サブネット | `${public_subnet_ids}`（ALBと同じパブリックサブネット） |
 | セキュリティグループ | `${ecs_security_group_id}` |
 | パブリックIP割り当て | 有効（NAT Gateway を使わない構成のため） |
@@ -138,18 +138,47 @@ Terraform の実装コードから起こしたリソース仕様。`${project_na
 
 ---
 
+## Application Auto Scaling
+
+ECS Service の `desired_count` を負荷に応じて自動調整する。トラフィックスパイク(急激なアクセス集中)への耐性を持たせるための構成。
+
+### aws_appautoscaling_target
+
+| 項目 | 値 |
+|---|---|
+| リソースID | `service/${project_name}-cluster/${project_name}-service` |
+| スケーリング対象次元 | `ecs:service:DesiredCount` |
+| サービスネームスペース | `ecs` |
+| 最小キャパシティ | `${autoscaling_min_capacity}`（デフォルト: 1） |
+| 最大キャパシティ | `${autoscaling_max_capacity}`（デフォルト: 4） |
+
+### aws_appautoscaling_policy
+
+| 項目 | 値 |
+|---|---|
+| ポリシー名 | `${project_name}-cpu-scaling` |
+| ポリシータイプ | TargetTrackingScaling |
+| 対象メトリクス | `ECSServiceAverageCPUUtilization`（事前定義メトリクス） |
+| 目標値 | `${autoscaling_cpu_target_value}`（デフォルト: 70） |
+| スケールアウトのクールダウン | 60秒 |
+| スケールインのクールダウン | 300秒（急なスケールインを避けるため長めに設定） |
+
+> **IAMロールについて**: ECSサービスのApplication Auto Scalingは、AWSが自動作成するサービスリンクロール（`AWSServiceRoleForApplicationAutoScaling_ECSService`）を使用するため、本リポジトリでIAMロールを追加定義する必要はない。
+
+---
+
 ## CodeDeploy
 
 ### aws_codedeploy_app
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | アプリケーション名 | `${project_name}-deploy` |
 | コンピュートプラットフォーム | ECS |
 
 ### aws_codedeploy_deployment_group
 
-| 項目 | 値（予定） |
+| 項目 | 値 |
 |---|---|
 | デプロイグループ名 | `${project_name}-deploy-group` |
 | デプロイタイプ | BLUE_GREEN |

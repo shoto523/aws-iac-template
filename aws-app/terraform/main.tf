@@ -13,17 +13,20 @@ module "alb" {
 }
 
 module "ecs" {
-  source                    = "./modules/ecs"
-  project_name              = var.project_name
-  aws_region                = var.aws_region
-  public_subnet_ids         = var.public_subnet_ids
-  ecs_security_group_id     = var.ecs_security_group_id
-  container_name            = var.container_name
-  container_port            = var.container_port
-  ecr_repository_url        = var.ecr_repository_url
-  task_execution_role_arn   = module.iam.task_execution_role_arn
-  task_role_arn             = module.iam.task_role_arn
-  target_group_blue_arn     = module.alb.target_group_blue_arn
+  source                        = "./modules/ecs"
+  project_name                  = var.project_name
+  aws_region                    = var.aws_region
+  public_subnet_ids             = var.public_subnet_ids
+  ecs_security_group_id         = var.ecs_security_group_id
+  container_name                = var.container_name
+  container_port                = var.container_port
+  ecr_repository_url            = var.ecr_repository_url
+  task_execution_role_arn       = module.iam.task_execution_role_arn
+  task_role_arn                 = module.iam.task_role_arn
+  target_group_blue_arn         = module.alb.target_group_blue_arn
+  autoscaling_min_capacity      = var.autoscaling_min_capacity
+  autoscaling_max_capacity      = var.autoscaling_max_capacity
+  autoscaling_cpu_target_value  = var.autoscaling_cpu_target_value
 }
 
 module "codedeploy" {

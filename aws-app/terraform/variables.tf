@@ -46,3 +46,22 @@ variable "ecr_repository_url" {
   type        = string
   description = "ECRリポジトリのURI（aws-cicdの出力値）"
 }
+
+# オートスケーリング
+variable "autoscaling_min_capacity" {
+  type        = number
+  description = "ECSタスク数の最小値"
+  default     = 1
+}
+
+variable "autoscaling_max_capacity" {
+  type        = number
+  description = "ECSタスク数の最大値"
+  default     = 4
+}
+
+variable "autoscaling_cpu_target_value" {
+  type        = number
+  description = "CPU使用率の目標値（%）。この値を超えるとスケールアウトする"
+  default     = 70
+}

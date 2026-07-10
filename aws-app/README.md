@@ -43,14 +43,15 @@ ECS / ALB / CodeDeploy Deployment Group を構築し、`aws-cicd` と組み合�
 
 ---
 
-## ドキュメント
+## ドキュメントの読む順番
 
-| ファイル | 内容 |
-|---|---|
-| [docs/design.md](docs/design.md) | 設計書。スコープ・アーキテクチャ・インターフェース定義を確認する |
-| [docs/terraform_guide.md](docs/terraform_guide.md) | Terraform 実行手順。tfstate バケット作成から terraform destroy まで |
-| [docs/resource_design.md](docs/resource_design.md) | リソース詳細設計書（Terraform版）。各AWSリソースの名前・設定値・IAM権限の詳細 |
-| [docs/resource_design_cfn.md](docs/resource_design_cfn.md) | リソース詳細設計書（CloudFormation版）。スタック・パラメータ・論理ID・Outputs の詳細 |
+| 順番 | ファイル | 内容 |
+|---|---|---|
+| 1 | [docs/design.md](docs/design.md) | 設計書。スコープ・アーキテクチャ・インターフェース定義を確認する |
+| 2 | [docs/terraform_guide.md](docs/terraform_guide.md) | Terraform 実行手順。tfstate バケット作成から terraform destroy まで |
+| - | [docs/resource_design.md](docs/resource_design.md) | リソース詳細設計書（Terraform版）。各AWSリソースの名前・設定値・IAM権限の詳細 |
+| - | [docs/resource_design_cfn.md](docs/resource_design_cfn.md) | リソース詳細設計書（CloudFormation版）。スタック・パラメータ・論理ID・Outputs の詳細 |
+| - | [docs/qa.md](docs/qa.md) | よくある質問（Fargate選択理由・パブリックサブネット配置・オートスケーリング設定など） |
 
 ---
 
@@ -150,7 +151,8 @@ aws-app/
 │   ├── design.md                  # 設計書（スコープ・インターフェース定義）
 │   ├── terraform_guide.md         # Terraform 実行手順
 │   ├── resource_design.md         # リソース詳細設計書（Terraform版）
-│   └── resource_design_cfn.md     # リソース詳細設計書（CloudFormation版）
+│   ├── resource_design_cfn.md     # リソース詳細設計書（CloudFormation版）
+│   └── qa.md                      # よくある質問（Fargate選択理由・オートスケーリング設定など）
 ├── terraform/                     # Terraform 版 IaC
 │   └── modules/
 │       ├── iam/                   # ECS Task Execution / Task / CodeDeploy ロール
@@ -193,6 +195,7 @@ aws-app/
 | ALB Listener（:80 / :8080） | 02-alb | 本番・テストリスナー |
 | ECS Cluster | 03-ecs | コンテナの実行基盤 |
 | ECS Service | 03-ecs | アプリコンテナを常時稼働させるサービス（パブリックサブネット配置・パブリックIP付与） |
+| ECS Service Auto Scaling | 03-ecs | CPU使用率ベースのTarget Trackingでタスク数を自動増減（トラフィックスパイク対応） |
 | ECS Task Definition | 03-ecs | コンテナの定義（イメージ URI・CPU・メモリ） |
 | CodeDeploy Deployment Group | 04-codedeploy | ECS Blue/Green デプロイグループ |
 

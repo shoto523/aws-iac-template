@@ -20,6 +20,9 @@ CloudFormation の実装コードから起こしたリソース仕様。
 | `ContainerName` | String | — | タスク定義のコンテナ名 |
 | `ContainerPort` | Number | `80` | コンテナが使用するポート番号 |
 | `EcrRepositoryUrl` | String | — | ECRリポジトリURI（aws-cicdの出力値） |
+| `AutoscalingMinCapacity` | Number | `1` | ECSタスク数の最小値 |
+| `AutoscalingMaxCapacity` | Number | `4` | ECSタスク数の最大値 |
+| `AutoscalingCpuTargetValue` | Number | `70` | CPU使用率の目標値（%）。この値を超えるとスケールアウトする |
 
 ### 子スタックの展開順序
 
@@ -196,6 +199,23 @@ CloudFormation の実装コードから起こしたリソース仕様。
 | | | SecurityGroups | `[!Ref EcsSecurityGroupId]` |
 | | | AssignPublicIp | `ENABLED`（NAT Gateway を使わない構成のため） |
 | | | LoadBalancer（ターゲットグループ） | Blue ターゲットグループ |
+
+#### Application Auto Scaling
+
+| 論理ID | リソース型 | 設定項目 | 値 |
+|---|---|---|---|
+| `ScalableTarget` | `AWS::ApplicationAutoScaling::ScalableTarget` | MaxCapacity | `!Ref AutoscalingMaxCapacity` |
+| | | MinCapacity | `!Ref AutoscalingMinCapacity` |
+| | | ResourceId | `!Sub "service/${EcsCluster}/${EcsService.Name}"` |
+| | | ScalableDimension | `ecs:service:DesiredCount` |
+| | | ServiceNamespace | `ecs` |
+| `ScalingPolicy` | `AWS::ApplicationAutoScaling::ScalingPolicy` | PolicyName | `!Sub "${ProjectName}-cpu-scaling"` |
+| | | PolicyType | `TargetTrackingScaling` |
+| | | PredefinedMetricType | `ECSServiceAverageCPUUtilization` |
+| | | TargetValue | `!Ref AutoscalingCpuTargetValue` |
+| | | ScaleInCooldown / ScaleOutCooldown | 300秒 / 60秒 |
+
+> **IAMロールについて**: ECSサービスのApplication Auto Scalingは、AWSが自動作成するサービスリンクロールを使用するため、本スタックでIAMロールを追加定義する必要はない。
 
 ### Outputs
 

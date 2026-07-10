@@ -26,6 +26,7 @@ CI/CDパイプラインは別リポジトリ（`aws-cicd`）で管理し、本�
 |---|---|
 | ECS Cluster | コンテナの実行基盤（Fargate推奨） |
 | ECS Service | アプリコンテナを常時稼働させるサービス（デプロイコントローラー: CODE_DEPLOY） |
+| ECS Service Auto Scaling | CPU使用率に応じてタスク数を自動増減（Application Auto Scaling、Target Tracking方式） |
 | ECS Task Definition | コンテナの定義（イメージURI・CPU・メモリ）。**コンテナ環境変数はアプリリポジトリの `buildspec.yml` 内 taskdef.json 生成部分で管理（IaCのスコープ外）** |
 | ALB | Blue/Greenトラフィック切替のロードバランサー |
 | Target Group（Blue/Green） | Blue/Greenデプロイ用ターゲットグループ（2つ） |
@@ -68,8 +69,10 @@ CI/CDパイプラインは別リポジトリ（`aws-cicd`）で管理し、本�
 │  │                          │ トラフィック制御                │  │
 │  │  ┌───────────────────────▼────────────────────────────┐  │  │
 │  │  │  ECS Cluster（★ aws-app 管理）                     │  │  │
-│  │  │    ECS Service                                     │  │  │
+│  │  │    ECS Service ← Application Auto Scaling で       │  │  │
+│  │  │                  タスク数をCPU使用率に応じて増減   │  │  │
 │  │  │      ECS Task（Fargate / awsvpc / パブリックIP付き）│  │  │
+│  │  │      ECS Task（負荷増加時に自動追加）              │  │  │
 │  │  └────────────────────────────────────────────────────┘  │  │
 │  └──────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -149,6 +152,9 @@ terraform apply
 | コンテナ | `container_name` | タスク定義のコンテナ名 | `my-app` |
 | コンテナ | `container_port` | コンテナが使用するポート番号 | `80` |
 | コンテナ | `ecr_repository_url` | ECRリポジトリURI（`aws-cicd`の出力値） | `123456789.dkr.ecr.ap-northeast-1.amazonaws.com/my-app` |
+| オートスケーリング | `autoscaling_min_capacity` | ECSタスク数の最小値（省略可・デフォルト`1`） | `1` |
+| オートスケーリング | `autoscaling_max_capacity` | ECSタスク数の最大値（省略可・デフォルト`4`） | `4` |
+| オートスケーリング | `autoscaling_cpu_target_value` | CPU使用率の目標値%（省略可・デフォルト`70`）。超過時にスケールアウト | `70` |
 
 ### 出力（`aws-cicd` へ渡す値）
 
@@ -296,3 +302,5 @@ aws-app/
 | CodeDeploy Application + Deployment GroupをAWS-APP側に含める | ECS・ALBリソースへの参照が必要なため、アプリ基盤と一体で管理すべき |
 | CloudFormationはスタックを4本に分割 | IAM → ALB → ECS → CodeDeploy の順に依存関係があるため分割 |
 | デプロイ失敗時は自動ロールバックする | Blue/Green デプロイの目的（安全なデプロイ）を担保するため。`DEPLOYMENT_FAILURE` 発生時に旧環境（Blue）へ自動で切り戻す |
+| オートスケーリングはCPU使用率ベースのTarget Trackingを採用する | 実装がシンプルで、追加のメトリクス基盤（ALBリクエスト数のカスタムメトリクス化等）が不要なため。急激なトラフィック増加への耐性を最小限の構成で持たせることを優先した |
+| ECS Serviceの`desired_count`はTerraformのlifecycle(`ignore_changes`)で無視する | Application Auto Scalingがタスク数を動的に変更するため、`terraform apply`のたびに初期値（1）へ戻ってしまうのを防ぐ。CloudFormation版も同様に、オートスケーリング稼働後は`DesiredCount`を変更する再デプロイを避ける運用とする（[詳細 → qa.md](qa.md) Q4） |

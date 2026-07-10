@@ -66,6 +66,11 @@ container_port   = 80           # コンテナが公開するポート番号
 
 # aws-cicd の出力値（ローカルで terraform output ecr_repository_url を実行して取得）
 ecr_repository_url = "123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/my-app"
+
+# オートスケーリング（省略可。未設定時は min=1 / max=4 / cpu_target=70 が使われる）
+# autoscaling_min_capacity     = 1
+# autoscaling_max_capacity     = 4
+# autoscaling_cpu_target_value = 70
 ```
 
 VPC / Subnet / Security Group を CLI で確認する場合：

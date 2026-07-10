@@ -11,3 +11,8 @@ ecs_security_group_id = "sg-yyyyyyyy"
 container_name     = "my-app"
 container_port     = 80
 ecr_repository_url = "123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/my-app"  # aws-cicdの出力値
+
+# オートスケーリング（省略可。未設定時は右記のデフォルト値が使われる: min=1 / max=4 / cpu_target=70）
+# autoscaling_min_capacity     = 1
+# autoscaling_max_capacity     = 4
+# autoscaling_cpu_target_value = 70

@@ -21,6 +21,15 @@ Parameters:
     Type: String
   TargetGroupBlueArn:
     Type: String
+  AutoscalingMinCapacity:
+    Type: Number
+    Default: 1
+  AutoscalingMaxCapacity:
+    Type: Number
+    Default: 4
+  AutoscalingCpuTargetValue:
+    Type: Number
+    Default: 70
 
 Resources:
   # ----------------------------------------
@@ -100,6 +109,31 @@ Resources:
       Tags:
         - Key: Project
           Value: !Ref ProjectName
+
+  # ----------------------------------------
+  # Application Auto Scaling
+  # ----------------------------------------
+  ScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: !Ref AutoscalingMaxCapacity
+      MinCapacity: !Ref AutoscalingMinCapacity
+      ResourceId: !Sub "service/${EcsCluster}/${EcsService.Name}"
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  ScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub "${ProjectName}-cpu-scaling"
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        TargetValue: !Ref AutoscalingCpuTargetValue
+        ScaleInCooldown: 300
+        ScaleOutCooldown: 60
 
 Outputs:
   EcsClusterName:
